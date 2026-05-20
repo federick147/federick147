@@ -1,14 +1,16 @@
-const { createClient } = require('redis');
+const Redis = require('ioredis');
 
 let client;
 
 async function connectRedis() {
-  client = createClient({ url: process.env.REDIS_URL || 'redis://localhost:6379' });
+  client = new Redis(process.env.REDIS_URL || 'redis://localhost:6379', {
+    tls: process.env.REDIS_URL?.startsWith('rediss://') ? {} : undefined,
+    maxRetriesPerRequest: 3,
+  });
 
   client.on('error', (err) => console.error('Redis error:', err));
+  client.on('connect', () => console.log('✅ Redis conectado'));
 
-  await client.connect();
-  console.log('✅ Redis conectado');
   return client;
 }
 
@@ -17,30 +19,27 @@ function getRedis() {
   return client;
 }
 
-// Guarda un token QR con TTL de 30 segundos
 async function guardarQRToken(tokenHash, payload) {
   const redis = getRedis();
   const ttl = parseInt(process.env.QR_TOKEN_TTL_SECONDS || '30');
-  await redis.setEx(`qr:${tokenHash}`, ttl, JSON.stringify(payload));
+  await redis.setex(`qr:${tokenHash}`, ttl, JSON.stringify(payload));
 }
 
-// Verifica y consume el token QR (one-time use)
 async function consumirQRToken(tokenHash) {
   const redis = getRedis();
   const key = `qr:${tokenHash}`;
   const data = await redis.get(key);
   if (!data) return null;
-  await redis.del(key); // Elimina el token tras usarlo
+  await redis.del(key);
   return JSON.parse(data);
 }
 
-// Rate limiting de login por email
 async function incrementarIntentosLogin(email) {
   const redis = getRedis();
   const key = `login_intentos:${email}`;
   const intentos = await redis.incr(key);
   if (intentos === 1) {
-    await redis.expire(key, 900); // Bloqueo de 15 minutos
+    await redis.expire(key, 900);
   }
   return intentos;
 }
