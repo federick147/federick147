@@ -1,0 +1,198 @@
+// Esquema Prisma - Veris Loyalty App
+// Base de datos: PostgreSQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────
+// USUARIOS (clientes de la app)
+// ─────────────────────────────────────────────
+model User {
+  id              String   @id @default(uuid())
+  nombre          String
+  apellido        String
+  email           String   @unique
+  telefono        String   @unique
+  contrasena_hash String
+  foto_url        String?
+  creado_en       DateTime @default(now())
+  actualizado_en  DateTime @updatedAt
+
+  tarjeta         LoyaltyCard?
+  user_coupons    UserCoupon[]
+  refresh_tokens  RefreshToken[]
+
+  @@map("usuarios")
+}
+
+// ─────────────────────────────────────────────
+// TARJETAS DE FIDELIZACIÓN
+// ─────────────────────────────────────────────
+model LoyaltyCard {
+  id              String      @id @default(uuid())
+  user_id         String      @unique
+  puntos_totales  Int         @default(0)
+  puntos_actuales Int         @default(0)
+  nivel           Nivel       @default(BRONZE)
+  codigo_unico    String      @unique @default(uuid())
+  activa          Boolean     @default(true)
+  creado_en       DateTime    @default(now())
+  actualizado_en  DateTime    @updatedAt
+
+  usuario         User        @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  transacciones   Transaction[]
+
+  @@map("tarjetas_fidelidad")
+}
+
+enum Nivel {
+  BRONZE
+  SILVER
+  GOLD
+}
+
+// ─────────────────────────────────────────────
+// NEGOCIOS (restaurantes, cafeterías, etc.)
+// ─────────────────────────────────────────────
+model Business {
+  id            String   @id @default(uuid())
+  nombre        String
+  logo_url      String?
+  categoria     String
+  direccion     String?
+  api_key_hash  String   @unique
+  propietario_id String
+  activo        Boolean  @default(true)
+  creado_en     DateTime @default(now())
+
+  cupones       Coupon[]
+  transacciones Transaction[]
+  admins        BusinessAdmin[]
+
+  @@map("negocios")
+}
+
+// ─────────────────────────────────────────────
+// ADMINISTRADORES DE NEGOCIO
+// ─────────────────────────────────────────────
+model BusinessAdmin {
+  id              String   @id @default(uuid())
+  email           String   @unique
+  contrasena_hash String
+  nombre          String
+  business_id     String
+  intentos_login  Int      @default(0)
+  bloqueado_hasta DateTime?
+  creado_en       DateTime @default(now())
+
+  negocio         Business @relation(fields: [business_id], references: [id], onDelete: Cascade)
+  refresh_tokens  AdminRefreshToken[]
+
+  @@map("administradores")
+}
+
+// ─────────────────────────────────────────────
+// TRANSACCIONES (puntos ganados / canjeados)
+// ─────────────────────────────────────────────
+model Transaction {
+  id           String          @id @default(uuid())
+  card_id      String
+  business_id  String
+  tipo         TipoTransaccion
+  puntos       Int
+  monto_compra Decimal?        @db.Decimal(10, 2)
+  descripcion  String?
+  dispositivo_id String?
+  latitud      Decimal?        @db.Decimal(10, 6)
+  longitud     Decimal?        @db.Decimal(10, 6)
+  creado_en    DateTime        @default(now())
+
+  tarjeta      LoyaltyCard @relation(fields: [card_id], references: [id], onDelete: Cascade)
+  negocio      Business    @relation(fields: [business_id], references: [id])
+
+  @@map("transacciones")
+}
+
+enum TipoTransaccion {
+  GANANCIA
+  CANJE
+}
+
+// ─────────────────────────────────────────────
+// CUPONES
+// ─────────────────────────────────────────────
+model Coupon {
+  id                String   @id @default(uuid())
+  business_id       String
+  titulo            String
+  descripcion       String?
+  imagen_url        String?
+  puntos_requeridos Int
+  stock             Int      @default(-1) // -1 = ilimitado
+  fecha_inicio      DateTime @default(now())
+  fecha_vencimiento DateTime?
+  activo            Boolean  @default(true)
+  es_nuevo          Boolean  @default(true)
+  creado_en         DateTime @default(now())
+  actualizado_en    DateTime @updatedAt
+
+  negocio           Business     @relation(fields: [business_id], references: [id], onDelete: Cascade)
+  user_coupons      UserCoupon[]
+
+  @@map("cupones")
+}
+
+// ─────────────────────────────────────────────
+// CUPONES DE USUARIO (canjes)
+// ─────────────────────────────────────────────
+model UserCoupon {
+  id                   String    @id @default(uuid())
+  user_id              String
+  coupon_id            String
+  canjeado             Boolean   @default(false)
+  canjeado_en          DateTime?
+  codigo_canje_unico   String    @unique @default(uuid())
+  creado_en            DateTime  @default(now())
+
+  usuario              User    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  cupon                Coupon  @relation(fields: [coupon_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, coupon_id])
+  @@map("user_cupones")
+}
+
+// ─────────────────────────────────────────────
+// REFRESH TOKENS (usuarios)
+// ─────────────────────────────────────────────
+model RefreshToken {
+  id         String   @id @default(uuid())
+  user_id    String
+  token_hash String   @unique
+  expira_en  DateTime
+  creado_en  DateTime @default(now())
+
+  usuario    User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
+}
+
+// ─────────────────────────────────────────────
+// REFRESH TOKENS (admins)
+// ─────────────────────────────────────────────
+model AdminRefreshToken {
+  id         String   @id @default(uuid())
+  admin_id   String
+  token_hash String   @unique
+  expira_en  DateTime
+  creado_en  DateTime @default(now())
+
+  admin      BusinessAdmin @relation(fields: [admin_id], references: [id], onDelete: Cascade)
+
+  @@map("admin_refresh_tokens")
+}

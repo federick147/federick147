@@ -1,0 +1,206 @@
+const crypto = require('crypto');
+const { PrismaClient } = require('@prisma/client');
+const {
+  generarQRToken,
+  verificarQRToken,
+} = require('../services/jwtService');
+const {
+  guardarQRToken,
+  consumirQRToken,
+} = require('../services/redisService');
+
+const prisma = new PrismaClient();
+
+const PUNTOS_POR_DOLAR = parseInt(process.env.PUNTOS_POR_DOLAR || '10');
+const PUNTOS_PLATA = parseInt(process.env.PUNTOS_PLATA || '500');
+const PUNTOS_ORO = parseInt(process.env.PUNTOS_ORO || '2000');
+
+// ─────────────────────────────────────────────
+// GENERAR TOKEN QR (cliente solicita nuevo QR)
+// ─────────────────────────────────────────────
+async function generarQR(req, res) {
+  try {
+    const userId = req.usuario.sub;
+
+    const tarjeta = await prisma.loyaltyCard.findUnique({
+      where: { user_id: userId },
+    });
+
+    if (!tarjeta || !tarjeta.activa) {
+      return res.status(404).json({ error: 'Tarjeta no encontrada o inactiva' });
+    }
+
+    const { token, hash } = generarQRToken(userId);
+
+    // Guardar en Redis con TTL 30s
+    await guardarQRToken(hash, {
+      user_id: userId,
+      card_id: tarjeta.id,
+      generado_en: Date.now(),
+    });
+
+    return res.json({
+      qr_token: token,
+      expira_en: 30,
+    });
+  } catch (error) {
+    console.error('Error al generar QR:', error);
+    return res.status(500).json({ error: 'Error al generar código QR' });
+  }
+}
+
+// ─────────────────────────────────────────────
+// ESCANEAR QR (admin escanea el código del cliente)
+// ─────────────────────────────────────────────
+async function escanearQR(req, res) {
+  try {
+    const { qr_token, monto_compra, dispositivo_id, latitud, longitud } = req.body;
+    const businessId = req.admin.business_id;
+
+    if (!qr_token || !monto_compra) {
+      return res.status(400).json({ error: 'Token QR y monto de compra son obligatorios' });
+    }
+
+    // 1. Verificar firma JWT del QR
+    let payload;
+    try {
+      payload = verificarQRToken(qr_token);
+    } catch {
+      return res.status(400).json({ error: 'Código QR inválido o expirado' });
+    }
+
+    // 2. Calcular hash del token para buscarlo en Redis
+    const tokenHash = crypto.createHash('sha256').update(qr_token).digest('hex');
+
+    // 3. Consumir el token en Redis (one-time use, evita capturas de pantalla)
+    const redisData = await consumirQRToken(tokenHash);
+    if (!redisData) {
+      return res.status(400).json({ error: 'El código QR ya fue usado o expiró' });
+    }
+
+    // 4. Verificar que el user_id del JWT coincide con el de Redis
+    if (payload.user_id !== redisData.user_id) {
+      return res.status(400).json({ error: 'QR inválido: inconsistencia de datos' });
+    }
+
+    const userId = redisData.user_id;
+    const cardId = redisData.card_id;
+
+    // 5. Calcular puntos según monto de compra
+    const monto = parseFloat(monto_compra);
+    if (isNaN(monto) || monto <= 0) {
+      return res.status(400).json({ error: 'Monto de compra inválido' });
+    }
+    const puntosGanados = Math.floor(monto * PUNTOS_POR_DOLAR);
+
+    // 6. Actualizar tarjeta con transacción atómica
+    const [transaccion, tarjetaActualizada] = await prisma.$transaction(async (tx) => {
+      const tarjeta = await tx.loyaltyCard.findUnique({ where: { id: cardId } });
+      if (!tarjeta) throw new Error('Tarjeta no encontrada');
+
+      const nuevosPuntosActuales = tarjeta.puntos_actuales + puntosGanados;
+      const nuevosPuntosTotales = tarjeta.puntos_totales + puntosGanados;
+
+      // Calcular nivel
+      let nuevoNivel = 'BRONZE';
+      if (nuevosPuntosTotales >= PUNTOS_ORO) nuevoNivel = 'GOLD';
+      else if (nuevosPuntosTotales >= PUNTOS_PLATA) nuevoNivel = 'SILVER';
+
+      const tarjetaActual = await tx.loyaltyCard.update({
+        where: { id: cardId },
+        data: {
+          puntos_actuales: nuevosPuntosActuales,
+          puntos_totales: nuevosPuntosTotales,
+          nivel: nuevoNivel,
+        },
+      });
+
+      const trans = await tx.transaction.create({
+        data: {
+          card_id: cardId,
+          business_id: businessId,
+          tipo: 'GANANCIA',
+          puntos: puntosGanados,
+          monto_compra: monto,
+          descripcion: `Compra de $${monto.toFixed(2)}`,
+          dispositivo_id: dispositivo_id || null,
+          latitud: latitud ? parseFloat(latitud) : null,
+          longitud: longitud ? parseFloat(longitud) : null,
+        },
+      });
+
+      return [trans, tarjetaActual];
+    });
+
+    // 7. Obtener info del usuario para mostrar al admin
+    const usuario = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { nombre: true, apellido: true, foto_url: true },
+    });
+
+    return res.json({
+      mensaje: `¡${puntosGanados} puntos agregados!`,
+      cliente: {
+        nombre: `${usuario.nombre} ${usuario.apellido}`,
+        foto_url: usuario.foto_url,
+      },
+      tarjeta: {
+        puntos_actuales: tarjetaActualizada.puntos_actuales,
+        puntos_totales: tarjetaActualizada.puntos_totales,
+        nivel: tarjetaActualizada.nivel,
+      },
+      puntos_ganados: puntosGanados,
+      transaccion_id: transaccion.id,
+    });
+  } catch (error) {
+    console.error('Error al escanear QR:', error);
+    return res.status(500).json({ error: 'Error al procesar escaneo' });
+  }
+}
+
+// ─────────────────────────────────────────────
+// OBTENER INFO DEL CLIENTE (previa al escaneo)
+// ─────────────────────────────────────────────
+async function infoClienteQR(req, res) {
+  try {
+    const { qr_token } = req.body;
+
+    if (!qr_token) {
+      return res.status(400).json({ error: 'Token QR requerido' });
+    }
+
+    let payload;
+    try {
+      payload = verificarQRToken(qr_token);
+    } catch {
+      return res.status(400).json({ error: 'Código QR inválido o expirado' });
+    }
+
+    const usuario = await prisma.user.findUnique({
+      where: { id: payload.user_id },
+      include: {
+        tarjeta: true,
+      },
+    });
+
+    if (!usuario) {
+      return res.status(404).json({ error: 'Cliente no encontrado' });
+    }
+
+    return res.json({
+      cliente: {
+        nombre: `${usuario.nombre} ${usuario.apellido}`,
+        foto_url: usuario.foto_url,
+      },
+      tarjeta: {
+        puntos_actuales: usuario.tarjeta?.puntos_actuales || 0,
+        nivel: usuario.tarjeta?.nivel || 'BRONZE',
+      },
+    });
+  } catch (error) {
+    console.error('Error al obtener info del cliente:', error);
+    return res.status(500).json({ error: 'Error interno' });
+  }
+}
+
+module.exports = { generarQR, escanearQR, infoClienteQR };
