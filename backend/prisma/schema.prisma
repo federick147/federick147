@@ -42,9 +42,11 @@ model LoyaltyCard {
   puntos_actuales Int         @default(0)
   nivel           Nivel       @default(BRONZE)
   codigo_unico    String      @unique @default(uuid())
-  activa          Boolean     @default(true)
-  creado_en       DateTime    @default(now())
-  actualizado_en  DateTime    @updatedAt
+  activa           Boolean     @default(true)
+  visitas_ciclo    Int         @default(0)
+  visitas_totales  Int         @default(0)
+  creado_en        DateTime    @default(now())
+  actualizado_en   DateTime    @updatedAt
 
   usuario         User        @relation(fields: [user_id], references: [id], onDelete: Cascade)
   transacciones   Transaction[]

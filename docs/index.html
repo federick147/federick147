@@ -162,42 +162,57 @@
     .card-bottom {
       padding: 14px 22px 18px;
     }
-    .card-stats {
-      display: flex;
-      gap: 24px;
-      margin-bottom: 12px;
-    }
-    .card-stat label {
+
+    /* Punch card stamps */
+    .punch-label {
       font-size: 10px;
       color: var(--text-muted);
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      display: block;
-      margin-bottom: 2px;
+      margin-bottom: 10px;
+      font-weight: 600;
     }
-    .card-stat span {
-      font-size: 22px;
-      font-weight: 800;
-      color: var(--text);
-    }
-    .card-progress-bar {
-      background: #E5E7EB;
-      height: 6px;
-      border-radius: 3px;
-      overflow: hidden;
-    }
-    .card-progress-fill {
-      height: 100%;
-      background: var(--blue);
-      border-radius: 3px;
-      transition: width 0.5s ease;
-    }
-    .card-progress-label {
+    .stamps-row {
       display: flex;
-      justify-content: space-between;
-      margin-top: 5px;
-      font-size: 10px;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .stamp {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      border: 2.5px solid #E5E7EB;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+      transition: all 0.3s ease;
+      flex-shrink: 0;
+    }
+    .stamp.filled {
+      background: var(--blue);
+      border-color: var(--blue);
+      color: white;
+    }
+    .stamp.free {
+      border-color: #F59E0B;
+      color: #F59E0B;
+      font-size: 18px;
+    }
+    .stamp.free.earned {
+      background: #F59E0B;
+      color: white;
+    }
+    .stamp-divider {
+      flex: 1;
+      height: 2px;
+      background: #E5E7EB;
+    }
+    .punch-sub {
+      font-size: 11px;
       color: var(--text-muted);
+    }
+    .punch-sub.gratis {
+      color: #F59E0B;
+      font-weight: 700;
     }
 
     /* ── Right panel (white, form) ─────────────── */
@@ -523,25 +538,21 @@
         <div class="card-code" id="preview-code">Código: ––––––</div>
       </div>
 
-      <!-- Bottom stats + progress -->
+      <!-- Punch card stamps -->
       <div class="card-bottom">
-        <div class="card-stats">
-          <div class="card-stat">
-            <label>Puntos</label>
-            <span id="preview-puntos">0</span>
-          </div>
-          <div class="card-stat">
-            <label>Nivel</label>
-            <span id="preview-nivel-text" style="font-size:16px; color: var(--blue);">Bronce</span>
-          </div>
+        <div class="punch-label">Consultas · 4ta paga, 5ta gratis</div>
+        <div class="stamps-row">
+          <div class="stamp" id="stamp-1">✓</div>
+          <div class="stamp-divider"></div>
+          <div class="stamp" id="stamp-2">✓</div>
+          <div class="stamp-divider"></div>
+          <div class="stamp" id="stamp-3">✓</div>
+          <div class="stamp-divider"></div>
+          <div class="stamp" id="stamp-4">✓</div>
+          <div class="stamp-divider"></div>
+          <div class="stamp free" id="stamp-free">★</div>
         </div>
-        <div class="card-progress-bar">
-          <div class="card-progress-fill" id="preview-progress" style="width: 5%"></div>
-        </div>
-        <div class="card-progress-label">
-          <span>0</span>
-          <span id="preview-next-level">500 pts → Plata</span>
-        </div>
+        <div class="punch-sub" id="punch-sub">Inicia sesión para ver tu progreso</div>
       </div>
     </div>
 
@@ -619,8 +630,8 @@
 
       <div class="stats-grid">
         <div class="stat-box">
-          <label>Puntos actuales</label>
-          <span id="user-puntos">–</span>
+          <label>Consultas en ciclo</label>
+          <span id="user-visitas">–</span>
         </div>
         <div class="stat-box">
           <label>Nivel</label>
@@ -760,27 +771,38 @@
     if (tarjeta) {
       const nivelMap = { BRONZE: 'Bronce', SILVER: 'Plata', GOLD: 'Oro' };
       const nivelLabel = nivelMap[tarjeta.nivel] || tarjeta.nivel;
-      const pts = tarjeta.puntos_actuales ?? 0;
+      const visitas = tarjeta.visitas_ciclo ?? 0;
+      const proximaGratis = visitas >= 4;
 
       document.getElementById('user-code').textContent = `Código: ${tarjeta.codigo_unico}`;
-      document.getElementById('user-puntos').textContent = pts;
+      document.getElementById('user-visitas').textContent = `${visitas} / 4`;
       document.getElementById('user-nivel').innerHTML = `<span class="nivel-badge nivel-${tarjeta.nivel}">${nivelLabel}</span>`;
 
       // Update card preview
       document.getElementById('preview-name').textContent = `${usuario.nombre} ${usuario.apellido || ''}`.trim();
       document.getElementById('preview-code').textContent = `Código: ${tarjeta.codigo_unico}`;
-      document.getElementById('preview-puntos').textContent = pts;
       document.getElementById('preview-nivel').textContent = nivelLabel.toUpperCase();
-      document.getElementById('preview-nivel-text').textContent = nivelLabel;
 
-      // Progress bar
-      const thresholds = { BRONZE: [0, 500], SILVER: [500, 2000], GOLD: [2000, 2000] };
-      const [min, max] = thresholds[tarjeta.nivel] || [0, 500];
-      const progress = max > min ? Math.min(((pts - min) / (max - min)) * 100, 100) : 100;
-      document.getElementById('preview-progress').style.width = progress + '%';
-      if (tarjeta.nivel === 'BRONZE') document.getElementById('preview-next-level').textContent = `${max} pts → Plata`;
-      else if (tarjeta.nivel === 'SILVER') document.getElementById('preview-next-level').textContent = `${max} pts → Oro`;
-      else document.getElementById('preview-next-level').textContent = 'Nivel máximo alcanzado';
+      // Punch card stamps
+      for (let i = 1; i <= 4; i++) {
+        const el = document.getElementById(`stamp-${i}`);
+        if (i <= visitas) {
+          el.classList.add('filled');
+        } else {
+          el.classList.remove('filled');
+        }
+      }
+      const freeStamp = document.getElementById('stamp-free');
+      if (proximaGratis) {
+        freeStamp.classList.add('earned');
+        document.getElementById('punch-sub').textContent = '¡Tu próxima consulta es GRATIS!';
+        document.getElementById('punch-sub').className = 'punch-sub gratis';
+      } else {
+        freeStamp.classList.remove('earned');
+        const faltan = 4 - visitas;
+        document.getElementById('punch-sub').textContent = `${faltan} consulta${faltan !== 1 ? 's' : ''} más para tu consulta gratis`;
+        document.getElementById('punch-sub').className = 'punch-sub';
+      }
     }
   }
 

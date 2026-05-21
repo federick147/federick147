@@ -91,6 +91,16 @@ async function crearClaseLoyalty() {
   }
 }
 
+function buildStamps(visitas) {
+  const TOTAL = 4;
+  const llenas = Math.min(visitas, TOTAL);
+  const gratis = visitas >= TOTAL;
+  let stamps = '';
+  for (let i = 0; i < TOTAL; i++) stamps += i < llenas ? '● ' : '○ ';
+  stamps += gratis ? '★ ¡GRATIS!' : '★';
+  return stamps.trim();
+}
+
 // ─── Crear objeto de tarjeta para un usuario ─────────────
 async function crearObjetoLoyalty(usuario, tarjeta) {
   const auth = getAuth();
@@ -98,6 +108,8 @@ async function crearObjetoLoyalty(usuario, tarjeta) {
   const objectId = `${ISSUER_ID}.${tarjeta.id}`;
 
   const nivelLabel = { BRONZE: 'Bronce', SILVER: 'Plata', GOLD: 'Oro' };
+  const visitas = tarjeta.visitas_ciclo || 0;
+  const proximaGratis = visitas >= 4;
 
   const objeto = {
     id: objectId,
@@ -106,8 +118,8 @@ async function crearObjetoLoyalty(usuario, tarjeta) {
     accountId: tarjeta.codigo_unico,
     accountName: `${usuario.nombre} ${usuario.apellido}`,
     loyaltyPoints: {
-      balance: { int: tarjeta.puntos_actuales },
-      label: 'Puntos disponibles',
+      balance: { string: `${visitas} / 4` },
+      label: 'Consultas',
     },
     secondaryLoyaltyPoints: {
       balance: { string: nivelLabel[tarjeta.nivel] || 'Bronce' },
@@ -120,14 +132,16 @@ async function crearObjetoLoyalty(usuario, tarjeta) {
     },
     textModulesData: [
       {
-        id: 'puntos',
-        header: 'PUNTOS DISPONIBLES',
-        body: tarjeta.puntos_actuales.toString(),
+        id: 'sellos',
+        header: 'PROGRESO',
+        body: buildStamps(visitas),
       },
       {
-        id: 'nivel',
-        header: 'NIVEL',
-        body: nivelLabel[tarjeta.nivel] || 'Bronce',
+        id: 'estado',
+        header: proximaGratis ? '¡BENEFICIO DISPONIBLE!' : 'SIGUIENTE BENEFICIO',
+        body: proximaGratis
+          ? '¡Tu próxima consulta es GRATIS!'
+          : `Te faltan ${4 - visitas} consulta${4 - visitas !== 1 ? 's' : ''} para tu consulta gratis`,
       },
     ],
     hexBackgroundColor: '#0071CE',
@@ -156,22 +170,30 @@ async function actualizarTarjeta(tarjeta) {
   const client = await auth.getClient();
   const objectId = `${ISSUER_ID}.${tarjeta.id}`;
   const nivelLabel = { BRONZE: 'Bronce', SILVER: 'Plata', GOLD: 'Oro' };
+  const visitas = tarjeta.visitas_ciclo || 0;
+  const proximaGratis = visitas >= 4;
 
   await client.request({
     url: `https://walletobjects.googleapis.com/walletobjects/v1/loyaltyObject/${objectId}`,
     method: 'PATCH',
     data: {
       loyaltyPoints: {
-        balance: { int: tarjeta.puntos_actuales },
-        label: 'Puntos disponibles',
+        balance: { string: `${visitas} / 4` },
+        label: 'Consultas',
       },
       secondaryLoyaltyPoints: {
         balance: { string: nivelLabel[tarjeta.nivel] || 'Bronce' },
         label: 'Nivel',
       },
       textModulesData: [
-        { id: 'puntos', header: 'PUNTOS DISPONIBLES', body: tarjeta.puntos_actuales.toString() },
-        { id: 'nivel', header: 'NIVEL', body: nivelLabel[tarjeta.nivel] || 'Bronce' },
+        { id: 'sellos', header: 'PROGRESO', body: buildStamps(visitas) },
+        {
+          id: 'estado',
+          header: proximaGratis ? '¡BENEFICIO DISPONIBLE!' : 'SIGUIENTE BENEFICIO',
+          body: proximaGratis
+            ? '¡Tu próxima consulta es GRATIS!'
+            : `Te faltan ${4 - visitas} consulta${4 - visitas !== 1 ? 's' : ''} para tu consulta gratis`,
+        },
       ],
     },
   });

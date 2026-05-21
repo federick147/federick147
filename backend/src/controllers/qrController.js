@@ -11,9 +11,10 @@ const {
 
 const prisma = new PrismaClient();
 
-const PUNTOS_POR_DOLAR = parseInt(process.env.PUNTOS_POR_DOLAR || '10');
+const PUNTOS_POR_VISITA = parseInt(process.env.PUNTOS_POR_VISITA || '10');
 const PUNTOS_PLATA = parseInt(process.env.PUNTOS_PLATA || '500');
 const PUNTOS_ORO = parseInt(process.env.PUNTOS_ORO || '2000');
+const VISITAS_PARA_GRATIS = 4;
 
 // ─────────────────────────────────────────────
 // GENERAR TOKEN QR (cliente solicita nuevo QR)
@@ -57,8 +58,8 @@ async function escanearQR(req, res) {
     const { qr_token, monto_compra, dispositivo_id, latitud, longitud } = req.body;
     const businessId = req.admin.business_id;
 
-    if (!qr_token || !monto_compra) {
-      return res.status(400).json({ error: 'Token QR y monto de compra son obligatorios' });
+    if (!qr_token) {
+      return res.status(400).json({ error: 'Token QR es obligatorio' });
     }
 
     // 1. Verificar firma JWT del QR
@@ -86,22 +87,26 @@ async function escanearQR(req, res) {
     const userId = redisData.user_id;
     const cardId = redisData.card_id;
 
-    // 5. Calcular puntos según monto de compra
-    const monto = parseFloat(monto_compra);
-    if (isNaN(monto) || monto <= 0) {
-      return res.status(400).json({ error: 'Monto de compra inválido' });
-    }
-    const puntosGanados = Math.floor(monto * PUNTOS_POR_DOLAR);
+    // 5. Calcular puntos (fijos por visita) y lógica de visita gratis
+    const monto = monto_compra ? parseFloat(monto_compra) : 0;
+    const puntosGanados = PUNTOS_POR_VISITA;
 
     // 6. Actualizar tarjeta con transacción atómica
-    const [transaccion, tarjetaActualizada] = await prisma.$transaction(async (tx) => {
+    const [transaccion, tarjetaActualizada, esVisitaGratis] = await prisma.$transaction(async (tx) => {
       const tarjeta = await tx.loyaltyCard.findUnique({ where: { id: cardId } });
       if (!tarjeta) throw new Error('Tarjeta no encontrada');
 
-      const nuevosPuntosActuales = tarjeta.puntos_actuales + puntosGanados;
-      const nuevosPuntosTotales = tarjeta.puntos_totales + puntosGanados;
+      // Punch card: al llegar a VISITAS_PARA_GRATIS, la siguiente es gratis y reinicia
+      const visitasActuales = tarjeta.visitas_ciclo || 0;
+      const estaVisitaEsGratis = visitasActuales >= VISITAS_PARA_GRATIS;
+      const nuevasVisitasCiclo = estaVisitaEsGratis ? 0 : visitasActuales + 1;
+      const nuevasVisitasTotales = (tarjeta.visitas_totales || 0) + 1;
 
-      // Calcular nivel
+      // Solo suma puntos en visitas pagadas
+      const puntosASumar = estaVisitaEsGratis ? 0 : puntosGanados;
+      const nuevosPuntosActuales = tarjeta.puntos_actuales + puntosASumar;
+      const nuevosPuntosTotales = tarjeta.puntos_totales + puntosASumar;
+
       let nuevoNivel = 'BRONZE';
       if (nuevosPuntosTotales >= PUNTOS_ORO) nuevoNivel = 'GOLD';
       else if (nuevosPuntosTotales >= PUNTOS_PLATA) nuevoNivel = 'SILVER';
@@ -112,6 +117,8 @@ async function escanearQR(req, res) {
           puntos_actuales: nuevosPuntosActuales,
           puntos_totales: nuevosPuntosTotales,
           nivel: nuevoNivel,
+          visitas_ciclo: nuevasVisitasCiclo,
+          visitas_totales: nuevasVisitasTotales,
         },
       });
 
@@ -120,16 +127,16 @@ async function escanearQR(req, res) {
           card_id: cardId,
           business_id: businessId,
           tipo: 'GANANCIA',
-          puntos: puntosGanados,
-          monto_compra: monto,
-          descripcion: `Compra de $${monto.toFixed(2)}`,
+          puntos: puntosASumar,
+          monto_compra: monto > 0 ? monto : null,
+          descripcion: estaVisitaEsGratis ? 'Consulta gratis (beneficio fidelización)' : 'Consulta registrada',
           dispositivo_id: dispositivo_id || null,
           latitud: latitud ? parseFloat(latitud) : null,
           longitud: longitud ? parseFloat(longitud) : null,
         },
       });
 
-      return [trans, tarjetaActual];
+      return [trans, tarjetaActual, estaVisitaEsGratis];
     });
 
     // 7. Obtener info del usuario para mostrar al admin
@@ -138,8 +145,15 @@ async function escanearQR(req, res) {
       select: { nombre: true, apellido: true, foto_url: true },
     });
 
+    const visitasNuevas = tarjetaActualizada.visitas_ciclo;
+    const proximaGratis = visitasNuevas >= VISITAS_PARA_GRATIS;
+
     return res.json({
-      mensaje: `¡${puntosGanados} puntos agregados!`,
+      mensaje: esVisitaGratis
+        ? '¡Consulta GRATIS aplicada!'
+        : `¡Consulta ${visitasNuevas} de ${VISITAS_PARA_GRATIS} registrada!`,
+      es_visita_gratis: esVisitaGratis,
+      proxima_gratis: proximaGratis,
       cliente: {
         nombre: `${usuario.nombre} ${usuario.apellido}`,
         foto_url: usuario.foto_url,
@@ -148,8 +162,10 @@ async function escanearQR(req, res) {
         puntos_actuales: tarjetaActualizada.puntos_actuales,
         puntos_totales: tarjetaActualizada.puntos_totales,
         nivel: tarjetaActualizada.nivel,
+        visitas_ciclo: tarjetaActualizada.visitas_ciclo,
+        visitas_totales: tarjetaActualizada.visitas_totales,
       },
-      puntos_ganados: puntosGanados,
+      puntos_ganados: esVisitaGratis ? 0 : puntosGanados,
       transaccion_id: transaccion.id,
     });
   } catch (error) {
@@ -228,6 +244,8 @@ async function buscarClientePorCodigo(req, res) {
         puntos_actuales: tarjeta.puntos_actuales,
         puntos_totales: tarjeta.puntos_totales,
         nivel: tarjeta.nivel,
+        visitas_ciclo: tarjeta.visitas_ciclo || 0,
+        visitas_totales: tarjeta.visitas_totales || 0,
       },
     });
   } catch (error) {
