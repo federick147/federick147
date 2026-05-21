@@ -29,7 +29,7 @@ async function crearClaseLoyalty() {
 
   const clase = {
     id: CLASS_ID,
-    issuerName: 'Veris Loyalty',
+    issuerName: 'Veris',
     programName: 'Veris Loyalty',
     programLogo: {
       sourceUri: { uri: 'https://federick147.github.io/federick147/logo.svg' },
@@ -40,15 +40,38 @@ async function crearClaseLoyalty() {
       sourceUri: { uri: 'https://federick147.github.io/federick147/hero.svg' },
       contentDescription: { defaultValue: { language: 'es', value: 'Veris Centrales Médicas' } },
     },
+    wordMark: {
+      sourceUri: { uri: 'https://veris.com.ec' },
+    },
     rewardsTier: 'Bronce',
     rewardsTierLabel: 'Nivel',
     loyaltyPointsLabel: 'Puntos',
-    secondaryLoyaltyPoints: {
-      label: 'Visitas',
-      balance: { string: '0' },
-    },
-    reviewStatus: 'UNDER_REVIEW',
+    accountNameLabel: 'Titular',
+    accountIdLabel: 'Código',
+    reviewStatus: 'APPROVED',
     multipleDevicesAndHoldersAllowedStatus: 'ONE_USER_ALL_DEVICES',
+    countryCode: 'EC',
+    linksModuleData: {
+      uris: [
+        {
+          uri: 'https://veris.com.ec',
+          description: 'Sitio web Veris',
+          id: 'website',
+        },
+      ],
+    },
+    textModulesData: [
+      {
+        id: 'como_ganar',
+        header: 'CÓMO GANAR PUNTOS',
+        body: 'Presenta tu tarjeta en cada visita a Veris Centrales Médicas y acumula puntos automáticamente en todas las sedes.',
+      },
+      {
+        id: 'niveles',
+        header: 'NIVELES DE BENEFICIOS',
+        body: 'Bronce: 0–499 pts · Plata: 500–1999 pts · Oro: 2000+ pts',
+      },
+    ],
   };
 
   try {
