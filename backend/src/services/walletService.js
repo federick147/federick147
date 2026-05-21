@@ -118,7 +118,7 @@ async function crearObjetoLoyalty(usuario, tarjeta) {
     accountId: tarjeta.codigo_unico,
     accountName: `${usuario.nombre} ${usuario.apellido}`,
     loyaltyPoints: {
-      balance: { string: `${visitas} / 4` },
+      balance: { int: visitas },
       label: 'Consultas',
     },
     secondaryLoyaltyPoints: {
@@ -178,7 +178,7 @@ async function actualizarTarjeta(tarjeta) {
     method: 'PATCH',
     data: {
       loyaltyPoints: {
-        balance: { string: `${visitas} / 4` },
+        balance: { int: visitas },
         label: 'Consultas',
       },
       secondaryLoyaltyPoints: {
