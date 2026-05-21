@@ -1,0 +1,502 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Veris · Tarjeta de Fidelización</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: #f0eee9;
+    color: #1f1f1f;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+  #root { display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; padding: 40px 16px; }
+</style>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useMemo } = React;
+
+const VERIS = {
+  blue: '#0071CE', blueDark: '#005BA6', blueDarker: '#004A8A',
+  blueSoft: '#F4F8FF', ink: '#0A0A0A', muted: '#6B7280',
+  mutedLight: '#9CA3AF', hairline: 'rgba(10,10,10,0.06)',
+};
+const F = `'Inter', system-ui, sans-serif`;
+
+// ── Logo ─────────────────────────────────────────────────────
+function Logo({ size=18, color='#fff', weight=800 }) {
+  return (
+    <span style={{ fontFamily:F, fontWeight:weight, fontSize:size, letterSpacing:size*0.12,
+      color, lineHeight:1, display:'inline-flex', alignItems:'center', gap:size*0.35 }}>
+      <span style={{ display:'inline-block', position:'relative', width:size*0.7, height:size*0.7 }}>
+        <span style={{ position:'absolute', inset:0, background:color,
+          clipPath:'polygon(40% 0,60% 0,60% 40%,100% 40%,100% 60%,60% 60%,60% 100%,40% 100%,40% 60%,0 60%,0 40%,40% 40%)' }} />
+      </span>
+      <span>VERIS</span>
+    </span>
+  );
+}
+
+function Star({ size=10, color='#fff' }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 12 12" style={{display:'block'}}>
+      <path d="M6 1l1.5 3.2L11 4.7 8.5 7l.6 3.4L6 8.9 2.9 10.4 3.5 7 1 4.7l3.5-.5L6 1z" fill={color}/>
+    </svg>
+  );
+}
+
+// ── QR placeholder ───────────────────────────────────────────
+function QR({ size=160 }) {
+  const N = 21, cell = size/N;
+  const cells = useMemo(() => {
+    const arr = []; let seed = 7;
+    for (let r=0; r<N; r++) for (let c=0; c<N; c++) {
+      seed = (seed*9301+49297)%233280;
+      if (seed/233280 > 0.52) arr.push([r,c]);
+    }
+    return arr;
+  }, []);
+  const finder = (x,y) => (
+    <g key={`f${x}${y}`}>
+      <rect x={x*cell} y={y*cell} width={7*cell} height={7*cell} fill="#0A0A0A"/>
+      <rect x={(x+1)*cell} y={(y+1)*cell} width={5*cell} height={5*cell} fill="#fff"/>
+      <rect x={(x+2)*cell} y={(y+2)*cell} width={3*cell} height={3*cell} fill="#0A0A0A"/>
+    </g>
+  );
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{display:'block'}}>
+      <rect width={size} height={size} fill="#fff"/>
+      {cells.map(([r,c],i) => {
+        if ((r<8&&c<8)||(r<8&&c>=N-8)||(r>=N-8&&c<8)) return null;
+        return <rect key={i} x={c*cell} y={r*cell} width={cell} height={cell} fill="#0A0A0A"/>;
+      })}
+      {finder(0,0)}{finder(N-7,0)}{finder(0,N-7)}
+    </svg>
+  );
+}
+
+function TimerArc({ size=220, progress=0.7 }) {
+  const stroke=4, r=(size-stroke)/2, C=2*Math.PI*r;
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}
+      style={{position:'absolute',inset:0,pointerEvents:'none'}}>
+      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="rgba(0,113,206,0.12)" strokeWidth={stroke}/>
+      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={VERIS.blue} strokeWidth={stroke}
+        strokeDasharray={C} strokeDashoffset={C*(1-progress)} strokeLinecap="round"
+        transform={`rotate(-90 ${size/2} ${size/2})`} style={{transition:'stroke-dashoffset 0.9s linear'}}/>
+    </svg>
+  );
+}
+
+// ── STATE 1: Collapsed ───────────────────────────────────────
+function CardCollapsed({ onClick }) {
+  return (
+    <button onClick={onClick} style={{ all:'unset', cursor:'pointer', display:'block',
+      width:'100%', height:80, background:VERIS.blue, borderRadius:16,
+      boxShadow:'0 8px 24px rgba(0,113,206,0.28),0 2px 6px rgba(0,0,0,0.08)',
+      position:'relative', overflow:'hidden' }}>
+      <div style={{ position:'absolute', inset:0,
+        background:'linear-gradient(180deg,rgba(255,255,255,0.06),rgba(0,0,0,0.06))', pointerEvents:'none' }}/>
+      <div style={{ position:'absolute', right:-30, top:-30, width:110, height:110,
+        borderRadius:'50%', background:'rgba(255,255,255,0.06)' }}/>
+      <div style={{ position:'relative', height:'100%', padding:'0 18px',
+        display:'flex', alignItems:'center', justifyContent:'space-between', fontFamily:F, color:'#fff' }}>
+        <div style={{ display:'flex', flexDirection:'column', gap:4 }}>
+          <Logo size={17} color="#fff" weight={800}/>
+          <span style={{ fontSize:11, opacity:0.78, letterSpacing:0.2, fontWeight:500 }}>Centrales Médicas</span>
+        </div>
+        <div style={{ display:'flex', alignItems:'center', gap:8, fontSize:13, fontWeight:600, letterSpacing:0.1 }}>
+          <span>1,240 pts</span>
+          <span style={{ opacity:0.55 }}>·</span>
+          <span style={{ display:'inline-flex', alignItems:'center', gap:5,
+            background:'rgba(255,255,255,0.18)', borderRadius:999, padding:'4px 10px',
+            fontSize:11, fontWeight:600, letterSpacing:0.3 }}>
+            <Star size={10}/> PLATA
+          </span>
+        </div>
+      </div>
+    </button>
+  );
+}
+
+// ── STATE 2: Expanded ────────────────────────────────────────
+function CardExpanded({ onBack, onDetail }) {
+  return (
+    <div style={{ width:'100%', display:'flex', flexDirection:'column', gap:0,
+      borderRadius:18, overflow:'hidden', background:'#fff',
+      boxShadow:'0 12px 36px rgba(0,30,80,0.18),0 2px 6px rgba(0,0,0,0.05)', fontFamily:F }}>
+      {/* Top band */}
+      <div style={{ background:VERIS.blue, padding:'18px 18px 16px', position:'relative', overflow:'hidden' }}>
+        <div style={{ position:'absolute', right:-40, top:-40, width:140, height:140,
+          borderRadius:'50%', background:'rgba(255,255,255,0.07)' }}/>
+        <div style={{ position:'relative', display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
+          <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+            <Logo size={20} color="#fff" weight={800}/>
+            <span style={{ fontSize:11.5, color:'#fff', opacity:0.85, fontStyle:'italic', fontWeight:400 }}>
+              Tu salud tiene recompensa
+            </span>
+          </div>
+          <div style={{ display:'inline-flex', alignItems:'center', gap:5,
+            background:'rgba(255,255,255,0.92)', borderRadius:999, padding:'5px 10px',
+            color:VERIS.blue, fontSize:10.5, fontWeight:700, letterSpacing:0.6 }}>
+            <Star size={11} color={VERIS.blue}/> NIVEL PLATA
+          </div>
+        </div>
+      </div>
+      {/* Middle */}
+      <div style={{ background:'#fff', padding:'14px 18px 16px' }}>
+        <div style={{ fontSize:16, fontWeight:700, color:VERIS.ink, letterSpacing:-0.1 }}>María Vásquez</div>
+        <div style={{ fontSize:11, color:VERIS.muted, marginTop:2, letterSpacing:0.3 }}>VRS-20481-EC</div>
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12, marginTop:14,
+          paddingTop:12, borderTop:`1px solid ${VERIS.hairline}` }}>
+          <div>
+            <div style={{ fontSize:9, color:VERIS.mutedLight, fontWeight:700, letterSpacing:1.2 }}>PUNTOS</div>
+            <div style={{ fontSize:22, fontWeight:800, color:VERIS.blue, lineHeight:1.1, marginTop:2 }}>1,240</div>
+          </div>
+          <div>
+            <div style={{ fontSize:9, color:VERIS.mutedLight, fontWeight:700, letterSpacing:1.2 }}>PRÓXIMO NIVEL</div>
+            <div style={{ fontSize:11, fontWeight:600, color:VERIS.blue, marginTop:8 }}>660 pts para Oro</div>
+          </div>
+        </div>
+      </div>
+      {/* Bottom progress */}
+      <div style={{ background:VERIS.blueDark, padding:'12px 18px 14px' }}>
+        <div style={{ display:'flex', justifyContent:'space-between', fontSize:9.5,
+          color:'rgba(255,255,255,0.7)', fontWeight:600, letterSpacing:0.8, marginBottom:6 }}>
+          <span>PLATA</span><span>ORO</span>
+        </div>
+        <div style={{ height:6, borderRadius:999, background:'rgba(255,255,255,0.2)', overflow:'hidden' }}>
+          <div style={{ width:'65%', height:'100%', background:'#fff', borderRadius:999,
+            boxShadow:'0 0 8px rgba(255,255,255,0.4)' }}/>
+        </div>
+        <div style={{ textAlign:'center', fontSize:10.5, color:'#fff', marginTop:8, fontWeight:500 }}>
+          Nivel Oro a solo <strong style={{ fontWeight:700 }}>660 pts</strong> más
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── STATE 3: Detail with QR ───────────────────────────────────
+function CardDetail({ onBack, timerProgress, secondsLeft }) {
+  return (
+    <div style={{ width:'100%', height:'100%', background:'#fff', fontFamily:F,
+      display:'flex', flexDirection:'column', overflow:'hidden' }}>
+      {/* Header */}
+      <div style={{ padding:'10px 16px 8px', display:'flex', alignItems:'center',
+        justifyContent:'space-between', flexShrink:0 }}>
+        <button onClick={onBack} style={{ all:'unset', cursor:'pointer', width:36, height:36,
+          borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', color:VERIS.ink }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M15 6l-6 6 6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </button>
+        <div style={{ fontSize:13, fontWeight:600 }}>Tarjeta Veris</div>
+        <div style={{ width:36 }}/>
+      </div>
+      {/* Mini brand strip */}
+      <div style={{ margin:'4px 16px 16px', background:VERIS.blue, borderRadius:14,
+        padding:'12px 16px', display:'flex', justifyContent:'space-between', alignItems:'center', color:'#fff' }}>
+        <div>
+          <Logo size={15} color="#fff" weight={800}/>
+          <div style={{ fontSize:11, opacity:0.85, marginTop:3, letterSpacing:0.2 }}>
+            María Vásquez · VRS-20481-EC
+          </div>
+        </div>
+        <div style={{ display:'inline-flex', alignItems:'center', gap:5,
+          background:'rgba(255,255,255,0.18)', borderRadius:999, padding:'4px 9px',
+          fontSize:10.5, fontWeight:700, letterSpacing:0.4 }}>
+          <Star size={10}/> PLATA · 1,240
+        </div>
+      </div>
+      {/* QR + timer */}
+      <div style={{ display:'flex', flexDirection:'column', alignItems:'center', padding:'4px 16px 8px' }}>
+        <div style={{ position:'relative', width:220, height:220,
+          display:'flex', alignItems:'center', justifyContent:'center' }}>
+          <TimerArc size={220} progress={timerProgress}/>
+          <div style={{ width:184, height:184, background:'#fff', borderRadius:16, padding:12,
+            boxShadow:'0 6px 20px rgba(0,30,80,0.12),0 0 0 1px rgba(10,10,10,0.04)',
+            display:'flex', alignItems:'center', justifyContent:'center' }}>
+            <QR size={160}/>
+          </div>
+        </div>
+        <div style={{ fontSize:11, color:VERIS.muted, marginTop:12, textAlign:'center' }}>
+          Muéstralo en caja · Se renueva en{' '}
+          <strong style={{ color:VERIS.blue, fontWeight:700 }}>{secondsLeft}s</strong>
+        </div>
+      </div>
+      {/* Info rows */}
+      <div style={{ margin:'16px 16px 0', background:VERIS.blueSoft, borderRadius:14, overflow:'hidden', flexShrink:0 }}>
+        <InfoRow icon="🏥" label="Última visita" title="Consulta General" meta="Quito Kennedy · hace 8 días"/>
+        <div style={{ height:1, background:'rgba(0,113,206,0.08)', margin:'0 14px' }}/>
+        <InfoRow icon="💊" label="Beneficio activo" title="20% Farmacia" meta="Vence en 3 días" accent/>
+        <div style={{ height:1, background:'rgba(0,113,206,0.08)', margin:'0 14px' }}/>
+        <InfoRow icon="🔬" label="Canjeable ahora" title="Laboratorio básico" meta="800 pts" action/>
+      </div>
+      {/* CTA */}
+      <div style={{ padding:'20px 16px 16px', flexShrink:0 }}>
+        <button style={{ all:'unset', width:'100%', height:48, borderRadius:24,
+          background:VERIS.blue, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center',
+          fontFamily:F, fontSize:15, fontWeight:600, letterSpacing:0.1, cursor:'pointer',
+          boxShadow:'0 4px 14px rgba(0,113,206,0.32)' }}>
+          Agendar cita
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function InfoRow({ icon, label, title, meta, accent, action }) {
+  return (
+    <div style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 14px', minHeight:48 }}>
+      <div style={{ width:36, height:36, borderRadius:10, background:'#fff', flexShrink:0,
+        display:'flex', alignItems:'center', justifyContent:'center', fontSize:16,
+        boxShadow:'0 1px 3px rgba(0,30,80,0.08)' }}>{icon}</div>
+      <div style={{ flex:1, minWidth:0 }}>
+        <div style={{ fontSize:10, color:VERIS.muted, fontWeight:600, letterSpacing:0.6, textTransform:'uppercase' }}>{label}</div>
+        <div style={{ fontSize:13.5, fontWeight:600, color:VERIS.ink, marginTop:1 }}>{title}</div>
+        <div style={{ fontSize:11.5, color:accent?VERIS.blue:VERIS.muted, marginTop:1, fontWeight:accent?600:500 }}>{meta}</div>
+      </div>
+      {action && (
+        <button style={{ all:'unset', cursor:'pointer', fontSize:11, fontWeight:700, color:VERIS.blue,
+          padding:'6px 12px', borderRadius:999, background:'#fff', letterSpacing:0.3 }}>CANJEAR</button>
+      )}
+    </div>
+  );
+}
+
+// ── Phone device ─────────────────────────────────────────────
+function Phone({ children }) {
+  return (
+    <div style={{ width:393, borderRadius:48, overflow:'hidden',
+      border:'10px solid #2a2a2a', boxShadow:'0 30px 80px rgba(0,0,0,0.35)',
+      background:'#F1F3F4', display:'flex', flexDirection:'column', position:'relative' }}>
+      {/* Status bar */}
+      <div style={{ height:44, background:'#F1F3F4', display:'flex', alignItems:'center',
+        justifyContent:'space-between', padding:'0 24px', position:'relative' }}>
+        <span style={{ fontSize:14, fontWeight:600 }}>9:41</span>
+        <div style={{ position:'absolute', left:'50%', top:10, transform:'translateX(-50%)',
+          width:120, height:34, borderRadius:20, background:'#1a1a1a' }}/>
+        <div style={{ display:'flex', gap:6, alignItems:'center', zIndex:1 }}>
+          <svg width="16" height="12" viewBox="0 0 16 12"><path d="M8 2.4L.8 8h14.4L8 2.4z" fill="#000"/></svg>
+          <svg width="15" height="12" viewBox="0 0 15 12"><rect x="1" y="3" width="2" height="9" rx="1" fill="#000"/><rect x="5" y="1.5" width="2" height="10.5" rx="1" fill="#000"/><rect x="9" y="0" width="2" height="12" rx="1" fill="#000"/><rect x="13" y="-1" width="2" height="13" rx="1" fill="#000"/></svg>
+          <div style={{ width:25, height:12, borderRadius:3, border:'1.5px solid #000', position:'relative', padding:'1px 1px' }}>
+            <div style={{ width:'80%', height:'100%', background:'#000', borderRadius:1 }}/>
+            <div style={{ position:'absolute', right:-4, top:'50%', transform:'translateY(-50%)', width:3, height:6, background:'#000', borderRadius:'0 2px 2px 0' }}/>
+          </div>
+        </div>
+      </div>
+      {/* Content */}
+      <div style={{ flex:1, overflow:'hidden', position:'relative', minHeight:680 }}>
+        {children}
+      </div>
+      {/* Home bar */}
+      <div style={{ height:34, background:'#F1F3F4', display:'flex', alignItems:'center', justifyContent:'center' }}>
+        <div style={{ width:134, height:5, borderRadius:3, background:'rgba(0,0,0,0.2)' }}/>
+      </div>
+    </div>
+  );
+}
+
+// ── Wallet stack scene ────────────────────────────────────────
+function WalletStack({ onTapVeris }) {
+  return (
+    <div style={{ width:'100%', height:'100%', background:'#F1F3F4', overflowY:'auto', fontFamily:F }}>
+      {/* Header */}
+      <div style={{ padding:'20px 20px 12px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+        <div style={{ fontSize:24, fontWeight:700, color:'#1f1f1f' }}>Mi cartera</div>
+        <div style={{ display:'flex', gap:8 }}>
+          {['M','⋮'].map(ic=>(
+            <div key={ic} style={{ width:36, height:36, borderRadius:'50%', background:'rgba(0,0,0,0.05)',
+              display:'flex', alignItems:'center', justifyContent:'center', fontSize:14, fontWeight:700 }}>{ic}</div>
+          ))}
+        </div>
+      </div>
+      <div style={{ padding:'0 4px 4px 20px', fontSize:11, color:'#5f6368', marginBottom:12 }}>6 tarjetas · Sincronizado</div>
+
+      <SectionLabel>Pagos</SectionLabel>
+      <div style={{ padding:'0 16px', display:'flex', flexDirection:'column', gap:8 }}>
+        <GenericCard name="Cuenta Corriente" sub="•••• 4821 · Débito" color="#1F2937" glyph="B"/>
+        <GenericCard name="Tarjeta Crédito" sub="•••• 0019 · Visa" color="#374151" glyph="V"/>
+      </div>
+
+      <SectionLabel>Fidelización</SectionLabel>
+      <div style={{ padding:'0 16px', display:'flex', flexDirection:'column', gap:8 }}>
+        <CardCollapsed onClick={onTapVeris}/>
+        <GenericCard name="Supermaxi" sub="2,890 pts · Cliente" color="#7F1D1D" glyph="S"/>
+        <GenericCard name="Mi Cinema" sub="Gold · 4 boletos" color="#0F172A" glyph="C"/>
+      </div>
+
+      <SectionLabel>Transporte</SectionLabel>
+      <div style={{ padding:'0 16px 32px' }}>
+        <GenericCard name="Metro Quito" sub="$4,20 saldo" color="#065F46" glyph="M"/>
+      </div>
+    </div>
+  );
+}
+
+function SectionLabel({ children }) {
+  return (
+    <div style={{ padding:'14px 20px 8px', fontSize:11, fontWeight:700, letterSpacing:1,
+      color:'#5f6368', textTransform:'uppercase', fontFamily:F }}>{children}</div>
+  );
+}
+
+function GenericCard({ name, sub, color, glyph }) {
+  return (
+    <div style={{ width:'100%', height:80, borderRadius:16, background:color, color:'#fff',
+      position:'relative', overflow:'hidden', boxShadow:'0 2px 6px rgba(0,0,0,0.08)', fontFamily:F }}>
+      <div style={{ position:'absolute', right:-20, top:-10, width:100, height:100,
+        borderRadius:'50%', background:'rgba(255,255,255,0.04)' }}/>
+      <div style={{ position:'relative', height:'100%', padding:'0 18px',
+        display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+        <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+          <div style={{ width:32, height:32, borderRadius:8, background:'rgba(255,255,255,0.18)',
+            display:'flex', alignItems:'center', justifyContent:'center', fontSize:14, fontWeight:700 }}>{glyph}</div>
+          <div style={{ display:'flex', flexDirection:'column', gap:3 }}>
+            <span style={{ fontSize:14, fontWeight:700 }}>{name}</span>
+            <span style={{ fontSize:11, opacity:0.78, fontWeight:500 }}>{sub}</span>
+          </div>
+        </div>
+        <span style={{ fontSize:11, fontWeight:600, opacity:0.7 }}>••••</span>
+      </div>
+    </div>
+  );
+}
+
+// ── Expanded scene ────────────────────────────────────────────
+function ExpandedScene({ onBack, onDetail }) {
+  return (
+    <div style={{ width:'100%', height:'100%', background:'#F1F3F4', fontFamily:F, display:'flex', flexDirection:'column' }}>
+      <div style={{ padding:'14px 16px 8px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+        <button onClick={onBack} style={{ all:'unset', cursor:'pointer', width:36, height:36,
+          borderRadius:'50%', background:'rgba(0,0,0,0.05)', display:'flex', alignItems:'center', justifyContent:'center' }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path d="M15 6l-6 6 6 6" stroke="#1f1f1f" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </button>
+        <div style={{ fontSize:13, fontWeight:600 }}>Tarjeta de fidelización</div>
+        <div style={{ width:36, height:36, borderRadius:'50%', background:'rgba(0,0,0,0.05)',
+          display:'flex', alignItems:'center', justifyContent:'center', fontSize:18 }}>⋯</div>
+      </div>
+
+      <div style={{ padding:'20px 16px 0' }}><CardExpanded/></div>
+
+      <div style={{ padding:'16px 16px 0' }}>
+        <button onClick={onDetail} style={{ all:'unset', cursor:'pointer', display:'flex',
+          alignItems:'center', justifyContent:'center', width:'100%', height:52, borderRadius:16,
+          background:'#fff', border:`1px solid ${VERIS.hairline}`, color:VERIS.blue,
+          fontFamily:F, fontSize:14, fontWeight:600, gap:8 }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <rect x="4" y="4" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="1.8"/>
+            <rect x="13" y="4" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="1.8"/>
+            <rect x="4" y="13" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="1.8"/>
+            <rect x="13" y="13" width="3" height="3" fill="currentColor"/>
+            <rect x="17" y="13" width="3" height="3" fill="currentColor"/>
+            <rect x="13" y="17" width="3" height="3" fill="currentColor"/>
+          </svg>
+          Ver código QR
+        </button>
+      </div>
+
+      <div style={{ padding:'24px 20px 0' }}>
+        <div style={{ fontSize:11, fontWeight:700, letterSpacing:1, color:'#5f6368',
+          textTransform:'uppercase', marginBottom:12 }}>Acciones rápidas</div>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:10 }}>
+          {[['📅','Agendar'],['🕐','Historial'],['🎁','Beneficios']].map(([ic,lb])=>(
+            <div key={lb} style={{ background:'#fff', borderRadius:14, padding:'14px 8px',
+              display:'flex', flexDirection:'column', alignItems:'center', gap:8,
+              border:`1px solid ${VERIS.hairline}` }}>
+              <span style={{ fontSize:22 }}>{ic}</span>
+              <span style={{ fontSize:11.5, fontWeight:600, color:VERIS.ink }}>{lb}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Main App ──────────────────────────────────────────────────
+function App() {
+  const [scene, setScene] = useState(0); // 0=stack, 1=expanded, 2=detail
+  const [secs, setSecs] = useState(30);
+
+  useEffect(() => {
+    if (scene !== 2) { setSecs(30); return; }
+    const id = setInterval(() => setSecs(s => s <= 1 ? 30 : s-1), 1000);
+    return () => clearInterval(id);
+  }, [scene]);
+
+  return (
+    <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:32, width:'100%' }}>
+      {/* Title */}
+      <div style={{ textAlign:'center' }}>
+        <div style={{ fontSize:13, fontWeight:700, letterSpacing:2, color:'rgba(60,50,40,0.5)',
+          textTransform:'uppercase', marginBottom:8, fontFamily:F }}>Veris Centrales Médicas</div>
+        <h1 style={{ fontSize:28, fontWeight:800, color:'rgba(40,30,20,0.85)', fontFamily:F, marginBottom:4 }}>
+          Tarjeta de Fidelización Digital
+        </h1>
+        <p style={{ fontSize:13, color:'rgba(60,50,40,0.55)', fontFamily:F }}>
+          Prototipo interactivo · Toca la tarjeta Veris azul para navegar
+        </p>
+      </div>
+
+      {/* State tabs */}
+      <div style={{ display:'flex', background:'rgba(0,0,0,0.06)', borderRadius:12, padding:4, gap:2, fontFamily:F }}>
+        {[['① Stack','Colapsada'],['② Tarjeta','Expandida'],['③ QR','Detalle']].map(([label, sub], i) => (
+          <button key={i} onClick={() => setScene(i)} style={{
+            all:'unset', cursor:'pointer', padding:'8px 16px', borderRadius:9,
+            background: scene===i ? '#fff' : 'transparent',
+            boxShadow: scene===i ? '0 1px 4px rgba(0,0,0,0.1)' : 'none',
+            transition:'all 0.15s',
+          }}>
+            <div style={{ fontSize:13, fontWeight:600, color: scene===i ? VERIS.blue : 'rgba(60,50,40,0.6)' }}>{label}</div>
+            <div style={{ fontSize:10, color:'rgba(60,50,40,0.45)', marginTop:1 }}>{sub}</div>
+          </button>
+        ))}
+      </div>
+
+      {/* Phone */}
+      <Phone>
+        {/* Stack */}
+        <div style={{ position:'absolute', inset:0, opacity:scene===0?1:0,
+          pointerEvents:scene===0?'auto':'none', transition:'opacity 250ms ease' }}>
+          <WalletStack onTapVeris={() => setScene(1)}/>
+        </div>
+        {/* Expanded */}
+        <div style={{ position:'absolute', inset:0, opacity:scene===1?1:0,
+          pointerEvents:scene===1?'auto':'none', transition:'opacity 250ms ease' }}>
+          <ExpandedScene onBack={() => setScene(0)} onDetail={() => setScene(2)}/>
+        </div>
+        {/* Detail */}
+        <div style={{ position:'absolute', inset:0, opacity:scene===2?1:0,
+          pointerEvents:scene===2?'auto':'none',
+          transition:'opacity 250ms ease, transform 250ms ease',
+          transform: scene===2 ? 'translateY(0)' : 'translateY(20px)' }}>
+          <CardDetail onBack={() => setScene(1)} timerProgress={secs/30} secondsLeft={secs}/>
+        </div>
+      </Phone>
+
+      <p style={{ fontSize:11, color:'rgba(60,50,40,0.4)', fontFamily:F, textAlign:'center', maxWidth:300 }}>
+        Este es el aspecto visual de tu tarjeta de fidelización en Google Wallet
+      </p>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
