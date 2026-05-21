@@ -3,240 +3,569 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Veris Loyalty – Tu tarjeta de fidelización</title>
+  <title>Veris Centrales Médicas – Tarjeta de Fidelización</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg: #0A0A0A;
-      --surface: #141414;
-      --surface2: #1E1E1E;
-      --gold: #F5C518;
-      --gold-dim: #C9A014;
-      --text: #FFFFFF;
-      --text-muted: #888888;
-      --error: #FF4D4D;
-      --success: #4DFF91;
+      --blue: #0071CE;
+      --blue-dark: #005BA6;
+      --blue-light: #E8F4FF;
+      --text: #1A1A2E;
+      --text-muted: #6B7280;
+      --border: #E5E7EB;
+      --bg: #F9FAFB;
+      --white: #FFFFFF;
+      --error: #DC2626;
+      --success: #059669;
+      --gold: #F59E0B;
       --radius: 16px;
     }
 
     html, body {
       min-height: 100vh;
+      font-family: 'Inter', sans-serif;
       background: var(--bg);
-      font-family: 'Space Grotesk', sans-serif;
       color: var(--text);
     }
 
-    .page {
+    /* ── Layout ─────────────────────────────────── */
+    .layout {
       min-height: 100vh;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+    }
+
+    /* ── Left panel (blue, card preview) ─────────── */
+    .panel-left {
+      background: var(--blue);
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 40px 16px 80px;
-    }
-
-    /* ── Brand ─────────────────────────────────── */
-    .brand {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      margin-bottom: 48px;
-      gap: 12px;
-    }
-    .brand-logo {
-      width: 64px; height: 64px;
-      background: var(--gold);
-      border-radius: 18px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 28px; font-weight: 700; color: var(--bg);
-    }
-    .brand-name { font-size: 28px; font-weight: 700; letter-spacing: -0.5px; }
-    .brand-name span { color: var(--gold); }
-    .brand-tagline { font-size: 14px; color: var(--text-muted); }
-
-    /* ── Wallet card preview ─────────────────── */
-    .wallet-preview {
-      width: 100%; max-width: 380px;
-      background: linear-gradient(135deg, #1A1A1A 0%, #111111 100%);
-      border: 1px solid #2A2A2A;
-      border-radius: 20px;
-      padding: 24px;
-      margin-bottom: 40px;
+      justify-content: center;
+      padding: 60px 48px;
       position: relative;
       overflow: hidden;
     }
-    .wallet-preview::before {
+    .panel-left::before {
       content: '';
-      position: absolute; top: -60px; right: -60px;
-      width: 180px; height: 180px;
-      background: radial-gradient(circle, rgba(245,197,24,0.12) 0%, transparent 70%);
+      position: absolute;
+      top: -120px; right: -120px;
+      width: 400px; height: 400px;
+      background: rgba(255,255,255,0.06);
       border-radius: 50%;
     }
-    .wallet-preview-top {
-      display: flex; justify-content: space-between; align-items: flex-start;
-      margin-bottom: 28px;
+    .panel-left::after {
+      content: '';
+      position: absolute;
+      bottom: -80px; left: -80px;
+      width: 280px; height: 280px;
+      background: rgba(255,255,255,0.04);
+      border-radius: 50%;
     }
-    .wallet-issuer { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
-    .wallet-program { font-size: 20px; font-weight: 700; color: var(--gold); margin-top: 4px; }
-    .wallet-badge {
-      background: rgba(245,197,24,0.15); border: 1px solid rgba(245,197,24,0.3);
-      border-radius: 8px; padding: 6px 12px;
-      font-size: 11px; color: var(--gold); font-weight: 600; letter-spacing: 0.5px;
-    }
-    .wallet-info { display: flex; gap: 32px; margin-bottom: 20px; }
-    .wallet-info-item label {
-      font-size: 10px; color: var(--text-muted); text-transform: uppercase;
-      letter-spacing: 0.5px; display: block; margin-bottom: 4px;
-    }
-    .wallet-info-item span { font-size: 22px; font-weight: 700; color: var(--text); }
-    .wallet-name { font-size: 14px; color: var(--text-muted); font-weight: 500; }
 
-    /* ── Card / Forms ────────────────────────── */
-    .card {
-      width: 100%; max-width: 420px;
-      background: var(--surface);
-      border: 1px solid #222;
-      border-radius: var(--radius);
-      padding: 32px 28px;
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 48px;
+      z-index: 1;
+    }
+    .brand-logo {
+      width: 52px; height: 52px;
+      background: white;
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .brand-logo svg { width: 34px; height: 34px; }
+    .brand-text h1 {
+      font-size: 22px;
+      font-weight: 800;
+      color: white;
+      line-height: 1.1;
+      letter-spacing: -0.3px;
+    }
+    .brand-text p {
+      font-size: 12px;
+      color: rgba(255,255,255,0.7);
+      margin-top: 2px;
+    }
+
+    /* ── Loyalty card (wallet-style) ─────────────── */
+    .loyalty-card {
+      width: 100%;
+      max-width: 340px;
+      background: white;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+      z-index: 1;
+    }
+    .card-band {
+      background: var(--blue);
+      padding: 20px 22px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+    .card-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .card-cross {
+      width: 32px; height: 32px;
+      flex-shrink: 0;
+    }
+    .card-brand-text {
+      font-size: 16px;
+      font-weight: 800;
+      color: white;
+      letter-spacing: 1px;
+    }
+    .card-brand-sub {
+      font-size: 9px;
+      color: rgba(255,255,255,0.75);
+      letter-spacing: 0.5px;
+      margin-top: 1px;
+    }
+    .card-nivel-badge {
+      background: rgba(255,255,255,0.2);
+      border: 1px solid rgba(255,255,255,0.4);
+      border-radius: 20px;
+      padding: 4px 10px;
+      font-size: 11px;
+      font-weight: 700;
+      color: white;
+      letter-spacing: 0.5px;
+    }
+
+    .card-identity {
+      padding: 16px 22px;
+      border-bottom: 1px solid #F3F4F6;
+    }
+    .card-name {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .card-code {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-family: 'Courier New', monospace;
+      margin-top: 2px;
+    }
+
+    .card-bottom {
+      padding: 14px 22px 18px;
+    }
+    .card-stats {
+      display: flex;
+      gap: 24px;
+      margin-bottom: 12px;
+    }
+    .card-stat label {
+      font-size: 10px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      display: block;
+      margin-bottom: 2px;
+    }
+    .card-stat span {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--text);
+    }
+    .card-progress-bar {
+      background: #E5E7EB;
+      height: 6px;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .card-progress-fill {
+      height: 100%;
+      background: var(--blue);
+      border-radius: 3px;
+      transition: width 0.5s ease;
+    }
+    .card-progress-label {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 5px;
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+
+    /* ── Right panel (white, form) ─────────────── */
+    .panel-right {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 48px;
+      overflow-y: auto;
+    }
+
+    .form-container {
+      width: 100%;
+      max-width: 400px;
+    }
+
+    .form-header {
+      margin-bottom: 32px;
+    }
+    .form-header h2 {
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--text);
+      letter-spacing: -0.5px;
+    }
+    .form-header p {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-top: 6px;
     }
 
     .tabs {
-      display: flex; background: var(--surface2);
-      border-radius: 10px; padding: 4px; margin-bottom: 28px;
+      display: flex;
+      background: #F3F4F6;
+      border-radius: 12px;
+      padding: 4px;
+      margin-bottom: 28px;
     }
     .tab-btn {
-      flex: 1; padding: 10px; border: none; background: transparent;
-      color: var(--text-muted); font-family: 'Space Grotesk', sans-serif;
-      font-size: 14px; font-weight: 500; border-radius: 8px; cursor: pointer;
+      flex: 1;
+      padding: 10px;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      border-radius: 9px;
+      cursor: pointer;
       transition: all 0.2s;
     }
-    .tab-btn.active { background: var(--gold); color: var(--bg); font-weight: 600; }
+    .tab-btn.active {
+      background: white;
+      color: var(--blue);
+      font-weight: 600;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    }
 
     .form-group { margin-bottom: 16px; }
     .form-group label {
-      display: block; font-size: 13px; font-weight: 500;
-      color: var(--text-muted); margin-bottom: 8px; letter-spacing: 0.3px;
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 6px;
     }
     .form-group input {
-      width: 100%; padding: 14px 16px;
-      background: var(--surface2); border: 1px solid #2A2A2A;
-      border-radius: 10px; color: var(--text);
-      font-family: 'Space Grotesk', sans-serif; font-size: 15px;
-      outline: none; transition: border-color 0.2s;
+      width: 100%;
+      padding: 12px 14px;
+      background: white;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-size: 15px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
     }
-    .form-group input:focus { border-color: var(--gold); }
-    .form-group input::placeholder { color: #444; }
+    .form-group input:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(0,113,206,0.12);
+    }
+    .form-group input::placeholder { color: #C0C4CC; }
 
     .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
     .btn-primary {
-      width: 100%; padding: 16px;
-      background: var(--gold); color: var(--bg);
-      border: none; border-radius: 12px;
-      font-family: 'Space Grotesk', sans-serif; font-size: 16px; font-weight: 700;
-      cursor: pointer; transition: background 0.2s, transform 0.1s; margin-top: 8px;
+      width: 100%;
+      padding: 14px;
+      background: var(--blue);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-family: 'Inter', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
+      margin-top: 8px;
     }
-    .btn-primary:hover { background: var(--gold-dim); }
+    .btn-primary:hover {
+      background: var(--blue-dark);
+      box-shadow: 0 4px 16px rgba(0,113,206,0.35);
+    }
     .btn-primary:active { transform: scale(0.98); }
-    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-
-    /* ── Google Wallet button ─────────────────── */
-    .wallet-section { width: 100%; max-width: 420px; margin-top: 24px; text-align: center; }
-    .btn-wallet {
-      display: inline-flex; align-items: center; gap: 12px;
-      padding: 14px 28px;
-      background: #000; border: 2px solid #444; border-radius: 40px;
-      color: #fff; font-family: 'Space Grotesk', sans-serif;
-      font-size: 15px; font-weight: 600; cursor: pointer; text-decoration: none;
-      transition: border-color 0.2s, transform 0.1s;
-    }
-    .btn-wallet:hover { border-color: var(--gold); transform: scale(1.02); }
-    .btn-wallet svg { flex-shrink: 0; }
-    .wallet-hint { margin-top: 12px; font-size: 12px; color: var(--text-muted); }
+    .btn-primary:disabled { opacity: 0.55; cursor: not-allowed; box-shadow: none; }
 
     /* ── Messages ────────────────────────────── */
     .msg {
-      padding: 12px 16px; border-radius: 10px;
-      font-size: 14px; margin-top: 12px; display: none;
+      padding: 11px 14px;
+      border-radius: 9px;
+      font-size: 13px;
+      margin-top: 12px;
+      display: none;
     }
-    .msg.error { background: rgba(255,77,77,0.1); border: 1px solid rgba(255,77,77,0.3); color: var(--error); display: block; }
-    .msg.success { background: rgba(77,255,145,0.1); border: 1px solid rgba(77,255,145,0.3); color: var(--success); display: block; }
+    .msg.error {
+      background: #FEF2F2;
+      border: 1px solid #FECACA;
+      color: var(--error);
+      display: block;
+    }
+    .msg.success {
+      background: #ECFDF5;
+      border: 1px solid #A7F3D0;
+      color: var(--success);
+      display: block;
+    }
 
     /* ── Logged-in state ─────────────────────── */
-    .user-card {
-      width: 100%; max-width: 420px;
-      background: var(--surface); border: 1px solid #222;
-      border-radius: var(--radius); padding: 28px;
+    .user-section { width: 100%; max-width: 400px; }
+    .user-greeting {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--text);
+      margin-bottom: 4px;
     }
-    .user-greeting { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
-    .user-code { font-size: 12px; color: var(--text-muted); font-family: monospace; margin-bottom: 24px; }
-    .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
-    .stat-box { background: var(--surface2); border-radius: 12px; padding: 16px; }
-    .stat-box label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px; }
-    .stat-box span { font-size: 26px; font-weight: 700; }
-    .nivel-badge { display: inline-block; padding: 4px 10px; border-radius: 6px; font-size: 13px; font-weight: 600; }
-    .nivel-BRONZE { background: rgba(205,127,50,0.2); color: #CD7F32; }
-    .nivel-SILVER { background: rgba(192,192,192,0.2); color: #C0C0C0; }
-    .nivel-GOLD   { background: rgba(245,197,24,0.2);  color: var(--gold); }
+    .user-code {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-family: 'Courier New', monospace;
+      margin-bottom: 24px;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .stat-box {
+      background: white;
+      border: 1.5px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+    }
+    .stat-box label {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 600;
+    }
+    .stat-box span { font-size: 26px; font-weight: 800; color: var(--text); }
+
+    .nivel-badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .nivel-BRONZE { background: #FEF3C7; color: #92400E; }
+    .nivel-SILVER { background: #F3F4F6; color: #4B5563; }
+    .nivel-GOLD   { background: #FEF9C3; color: #854D0E; }
+
+    /* ── Google Wallet button ─────────────────── */
+    .wallet-section { margin-bottom: 20px; }
+    .btn-wallet {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      width: 100%;
+      padding: 15px 24px;
+      background: #1A1A1A;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-family: 'Inter', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+      text-decoration: none;
+    }
+    .btn-wallet:hover { background: #333; }
+    .btn-wallet:active { transform: scale(0.98); }
+    .btn-wallet:disabled { opacity: 0.5; cursor: not-allowed; }
+    .wallet-hint {
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 8px;
+    }
+
+    .btn-card-link {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 13px;
+      background: var(--blue-light);
+      color: var(--blue);
+      border: 1.5px solid rgba(0,113,206,0.2);
+      border-radius: 12px;
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.2s;
+      margin-bottom: 16px;
+    }
+    .btn-card-link:hover { background: #D1E9FF; }
+
     .btn-logout {
-      background: transparent; border: 1px solid #333;
-      color: var(--text-muted); padding: 10px 20px;
-      border-radius: 10px; font-family: 'Space Grotesk', sans-serif;
-      font-size: 13px; cursor: pointer; transition: border-color 0.2s;
+      width: 100%;
+      padding: 11px;
+      background: transparent;
+      border: 1.5px solid var(--border);
+      color: var(--text-muted);
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
     }
     .btn-logout:hover { border-color: var(--error); color: var(--error); }
 
+    .admin-link {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+    .admin-link a {
+      color: var(--blue);
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .admin-link a:hover { text-decoration: underline; }
+
     .loader {
-      display: inline-block; width: 18px; height: 18px;
-      border: 2px solid transparent; border-top-color: var(--bg);
-      border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle;
+      display: inline-block;
+      width: 16px; height: 16px;
+      border: 2px solid transparent;
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Responsive ──────────────────────────── */
+    @media (max-width: 768px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+      .panel-left {
+        padding: 40px 24px 32px;
+        min-height: auto;
+      }
+      .panel-right {
+        padding: 40px 24px 60px;
+      }
+      .loyalty-card {
+        max-width: 300px;
+      }
+      .brand { margin-bottom: 28px; }
+    }
   </style>
 </head>
 <body>
-<div class="page">
-  <!-- Brand -->
-  <div class="brand">
-    <div class="brand-logo">V</div>
-    <div class="brand-name">Veris <span>Loyalty</span></div>
-    <div class="brand-tagline">Tu tarjeta de fidelización digital</div>
-  </div>
+<div class="layout">
 
-  <!-- Wallet card preview -->
-  <div class="wallet-preview">
-    <div class="wallet-preview-top">
-      <div>
-        <div class="wallet-issuer">Veris Loyalty</div>
-        <div class="wallet-program">Tarjeta Fidelización</div>
+  <!-- ── Left panel ── -->
+  <div class="panel-left">
+    <div class="brand">
+      <div class="brand-logo">
+        <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M88 56 L112 56 L112 88 L144 88 L144 112 L112 112 L112 144 L88 144 L88 112 L56 112 L56 88 L88 88 Z" fill="#0071CE"/>
+        </svg>
       </div>
-      <div class="wallet-badge" id="preview-nivel">BRONCE</div>
-    </div>
-    <div class="wallet-info">
-      <div class="wallet-info-item">
-        <label>Puntos</label>
-        <span id="preview-puntos">0</span>
-      </div>
-      <div class="wallet-info-item">
-        <label>Nivel</label>
-        <span style="font-size:16px; color: var(--gold);" id="preview-nivel-text">Bronce</span>
+      <div class="brand-text">
+        <h1>VERIS</h1>
+        <p>Centrales Médicas</p>
       </div>
     </div>
-    <div class="wallet-name" id="preview-name">Tu nombre aquí</div>
+
+    <div class="loyalty-card">
+      <!-- Brand band -->
+      <div class="card-band">
+        <div class="card-brand">
+          <svg class="card-cross" viewBox="0 0 200 200" fill="none">
+            <path d="M88 56 L112 56 L112 88 L144 88 L144 112 L112 112 L112 144 L88 144 L88 112 L56 112 L56 88 L88 88 Z" fill="white"/>
+          </svg>
+          <div>
+            <div class="card-brand-text">VERIS</div>
+            <div class="card-brand-sub">TU SALUD TIENE RECOMPENSA</div>
+          </div>
+        </div>
+        <div class="card-nivel-badge" id="preview-nivel">BRONCE</div>
+      </div>
+
+      <!-- Identity -->
+      <div class="card-identity">
+        <div class="card-name" id="preview-name">Tu nombre aquí</div>
+        <div class="card-code" id="preview-code">Código: ––––––</div>
+      </div>
+
+      <!-- Bottom stats + progress -->
+      <div class="card-bottom">
+        <div class="card-stats">
+          <div class="card-stat">
+            <label>Puntos</label>
+            <span id="preview-puntos">0</span>
+          </div>
+          <div class="card-stat">
+            <label>Nivel</label>
+            <span id="preview-nivel-text" style="font-size:16px; color: var(--blue);">Bronce</span>
+          </div>
+        </div>
+        <div class="card-progress-bar">
+          <div class="card-progress-fill" id="preview-progress" style="width: 5%"></div>
+        </div>
+        <div class="card-progress-label">
+          <span>0</span>
+          <span id="preview-next-level">500 pts → Plata</span>
+        </div>
+      </div>
+    </div>
+
+    <p style="color:rgba(255,255,255,0.55); font-size:12px; margin-top:24px; z-index:1; text-align:center;">
+      Acumula puntos en cada visita y canjéalos por beneficios
+    </p>
   </div>
 
-  <!-- ── Auth section (not logged in) ── -->
-  <div id="auth-section">
-    <div class="card">
+  <!-- ── Right panel ── -->
+  <div class="panel-right">
+
+    <!-- Auth section -->
+    <div id="auth-section" class="form-container">
+      <div class="form-header">
+        <h2>Bienvenido</h2>
+        <p>Accede a tu tarjeta de fidelización Veris</p>
+      </div>
+
       <div class="tabs">
         <button class="tab-btn active" onclick="switchTab('login')">Iniciar sesión</button>
-        <button class="tab-btn" onclick="switchTab('registro')">Registrarse</button>
+        <button class="tab-btn" onclick="switchTab('registro')">Crear cuenta</button>
       </div>
 
-      <!-- Login -->
+      <!-- Login form -->
       <form id="login-form" onsubmit="handleLogin(event)">
         <div class="form-group">
           <label>Correo electrónico</label>
@@ -250,7 +579,7 @@
         <div class="msg" id="login-msg"></div>
       </form>
 
-      <!-- Registro -->
+      <!-- Registro form -->
       <form id="registro-form" style="display:none;" onsubmit="handleRegistro(event)">
         <div class="form-row">
           <div class="form-group">
@@ -274,20 +603,23 @@
           <label>Contraseña</label>
           <input type="password" id="reg-contrasena" placeholder="Mínimo 8 caracteres" minlength="8" required />
         </div>
-        <button type="submit" class="btn-primary" id="reg-btn">Crear cuenta</button>
+        <button type="submit" class="btn-primary" id="reg-btn">Crear cuenta gratis</button>
         <div class="msg" id="reg-msg"></div>
       </form>
-    </div>
-  </div>
 
-  <!-- ── Logged-in section ── -->
-  <div id="user-section" style="display:none; width:100%; max-width:420px;">
-    <div class="user-card">
+      <div class="admin-link">
+        <a href="admin.html">Acceso administrador →</a>
+      </div>
+    </div>
+
+    <!-- Logged-in section -->
+    <div id="user-section" style="display:none;" class="user-section">
       <div class="user-greeting" id="user-greeting">¡Hola!</div>
       <div class="user-code" id="user-code"></div>
+
       <div class="stats-grid">
         <div class="stat-box">
-          <label>Puntos</label>
+          <label>Puntos actuales</label>
           <span id="user-puntos">–</span>
         </div>
         <div class="stat-box">
@@ -295,20 +627,34 @@
           <span id="user-nivel">–</span>
         </div>
       </div>
+
+      <div class="wallet-section">
+        <button class="btn-wallet" id="wallet-btn" onclick="agregarGoogleWallet()">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <rect width="24" height="24" rx="4" fill="#4285F4"/>
+            <path d="M12 5L7 12H12V19L17 12H12V5Z" fill="white"/>
+          </svg>
+          Añadir a Google Wallet
+        </button>
+        <p class="wallet-hint">Lleva tu tarjeta siempre contigo en tu teléfono</p>
+        <div class="msg" id="wallet-msg"></div>
+      </div>
+
+      <a href="tarjeta.html" class="btn-card-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <rect x="2" y="5" width="20" height="14" rx="3"/>
+          <path d="M2 10h20"/>
+        </svg>
+        Ver mi tarjeta completa
+      </a>
+
       <button class="btn-logout" onclick="logout()">Cerrar sesión</button>
+
+      <div class="admin-link">
+        <a href="admin.html">Panel de administración →</a>
+      </div>
     </div>
 
-    <div class="wallet-section">
-      <button class="btn-wallet" id="wallet-btn" onclick="agregarGoogleWallet()">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-          <path d="M21.5 12C21.5 17.2467 17.2467 21.5 12 21.5C6.75329 21.5 2.5 17.2467 2.5 12C2.5 6.75329 6.75329 2.5 12 2.5C17.2467 2.5 21.5 6.75329 21.5 12Z" fill="#4285F4"/>
-          <path d="M12 5L7 12H12V19L17 12H12V5Z" fill="white"/>
-        </svg>
-        Añadir a Google Wallet
-      </button>
-      <p class="wallet-hint">Tu tarjeta de puntos siempre a mano en tu teléfono</p>
-      <div class="msg" id="wallet-msg"></div>
-    </div>
   </div>
 </div>
 
@@ -380,7 +726,7 @@
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Error al registrarse');
+      if (!res.ok) throw new Error(data.error || 'Error al crear cuenta');
       accessToken = data.access_token;
       localStorage.setItem('veris_token', accessToken);
       showUserSection(data.usuario, data.tarjeta);
@@ -389,7 +735,7 @@
       msg.className = 'msg error';
     } finally {
       btn.disabled = false;
-      btn.innerHTML = 'Crear cuenta';
+      btn.innerHTML = 'Crear cuenta gratis';
     }
   }
 
@@ -400,7 +746,6 @@
       });
       if (!res.ok) { logout(); return; }
       const data = await res.json();
-      // perfil returns { id, nombre, apellido, email, tarjeta }
       showUserSection(data, data.tarjeta);
     } catch {
       logout();
@@ -415,15 +760,27 @@
     if (tarjeta) {
       const nivelMap = { BRONZE: 'Bronce', SILVER: 'Plata', GOLD: 'Oro' };
       const nivelLabel = nivelMap[tarjeta.nivel] || tarjeta.nivel;
+      const pts = tarjeta.puntos_actuales ?? 0;
 
       document.getElementById('user-code').textContent = `Código: ${tarjeta.codigo_unico}`;
-      document.getElementById('user-puntos').textContent = tarjeta.puntos_actuales ?? 0;
+      document.getElementById('user-puntos').textContent = pts;
       document.getElementById('user-nivel').innerHTML = `<span class="nivel-badge nivel-${tarjeta.nivel}">${nivelLabel}</span>`;
 
+      // Update card preview
       document.getElementById('preview-name').textContent = `${usuario.nombre} ${usuario.apellido || ''}`.trim();
-      document.getElementById('preview-puntos').textContent = tarjeta.puntos_actuales ?? 0;
-      document.getElementById('preview-nivel-text').textContent = nivelLabel;
+      document.getElementById('preview-code').textContent = `Código: ${tarjeta.codigo_unico}`;
+      document.getElementById('preview-puntos').textContent = pts;
       document.getElementById('preview-nivel').textContent = nivelLabel.toUpperCase();
+      document.getElementById('preview-nivel-text').textContent = nivelLabel;
+
+      // Progress bar
+      const thresholds = { BRONZE: [0, 500], SILVER: [500, 2000], GOLD: [2000, 2000] };
+      const [min, max] = thresholds[tarjeta.nivel] || [0, 500];
+      const progress = max > min ? Math.min(((pts - min) / (max - min)) * 100, 100) : 100;
+      document.getElementById('preview-progress').style.width = progress + '%';
+      if (tarjeta.nivel === 'BRONZE') document.getElementById('preview-next-level').textContent = `${max} pts → Plata`;
+      else if (tarjeta.nivel === 'SILVER') document.getElementById('preview-next-level').textContent = `${max} pts → Oro`;
+      else document.getElementById('preview-next-level').textContent = 'Nivel máximo alcanzado';
     }
   }
 
@@ -432,7 +789,7 @@
     const msg = document.getElementById('wallet-msg');
     msg.className = 'msg';
     btn.disabled = true;
-    btn.innerHTML = '<span class="loader" style="border-top-color:#fff"></span> Generando pase…';
+    btn.innerHTML = '<span class="loader"></span> Generando pase…';
 
     try {
       const res = await fetch(`${API}/wallet/google/crear`, {
@@ -440,15 +797,15 @@
         headers: { Authorization: `Bearer ${accessToken}` },
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Error generando pase');
+      if (!res.ok) throw new Error(data.error || 'No se pudo generar el pase');
       window.open(data.url, '_blank');
     } catch (err) {
       msg.textContent = err.message;
       msg.className = 'msg error';
     } finally {
       btn.disabled = false;
-      btn.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-        <path d="M21.5 12C21.5 17.2467 17.2467 21.5 12 21.5C6.75329 21.5 2.5 17.2467 2.5 12C2.5 6.75329 6.75329 2.5 12 2.5C17.2467 2.5 21.5 6.75329 21.5 12Z" fill="#4285F4"/>
+      btn.innerHTML = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+        <rect width="24" height="24" rx="4" fill="#4285F4"/>
         <path d="M12 5L7 12H12V19L17 12H12V5Z" fill="white"/>
       </svg> Añadir a Google Wallet`;
     }
