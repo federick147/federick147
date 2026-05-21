@@ -657,13 +657,13 @@
       <div class="card-bottom">
         <div class="punch-label">Consultas · 4ta paga, 5ta gratis</div>
         <div class="stamps-row">
-          <div class="stamp" id="stamp-1">✓</div>
+          <div class="stamp" id="stamp-1"></div>
           <div class="stamp-divider"></div>
-          <div class="stamp" id="stamp-2">✓</div>
+          <div class="stamp" id="stamp-2"></div>
           <div class="stamp-divider"></div>
-          <div class="stamp" id="stamp-3">✓</div>
+          <div class="stamp" id="stamp-3"></div>
           <div class="stamp-divider"></div>
-          <div class="stamp" id="stamp-4">✓</div>
+          <div class="stamp" id="stamp-4"></div>
           <div class="stamp-divider"></div>
           <div class="stamp free" id="stamp-free">★</div>
         </div>
@@ -960,8 +960,10 @@
         const el = document.getElementById(`stamp-${i}`);
         if (i <= visitas) {
           el.classList.add('filled');
+          el.textContent = '✓';
         } else {
           el.classList.remove('filled');
+          el.textContent = '';
         }
       }
       const freeStamp = document.getElementById('stamp-free');
