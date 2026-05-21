@@ -2,7 +2,11 @@ import { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { useFonts } from 'expo-font';
+import {
+  SpaceGrotesk_400Regular,
+  SpaceGrotesk_700Bold,
+  useFonts,
+} from '@expo-google-fonts/space-grotesk';
 import * as SplashScreen from 'expo-splash-screen';
 import useAuthStore from '../hooks/useAuth';
 import { Colors } from '../constants/colors';
@@ -13,8 +17,8 @@ export default function RootLayout() {
   const { inicializar, cargando } = useAuthStore();
 
   const [fontsLoaded] = useFonts({
-    'SpaceGrotesk-Bold': require('../assets/fonts/SpaceGrotesk-Bold.ttf'),
-    'SpaceGrotesk-Regular': require('../assets/fonts/SpaceGrotesk-Regular.ttf'),
+    'SpaceGrotesk-Regular': SpaceGrotesk_400Regular,
+    'SpaceGrotesk-Bold': SpaceGrotesk_700Bold,
   });
 
   useEffect(() => {
