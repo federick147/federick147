@@ -48,7 +48,7 @@ async function crearClaseLoyalty() {
     loyaltyPointsLabel: 'Puntos',
     accountNameLabel: 'Titular',
     accountIdLabel: 'Código',
-    reviewStatus: 'APPROVED',
+    reviewStatus: 'UNDER_REVIEW',
     multipleDevicesAndHoldersAllowedStatus: 'ONE_USER_ALL_DEVICES',
     countryCode: 'EC',
     linksModuleData: {
