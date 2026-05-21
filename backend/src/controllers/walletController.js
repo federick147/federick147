@@ -43,4 +43,33 @@ async function actualizarPaseGoogle(req, res) {
   }
 }
 
-module.exports = { crearPaseGoogle, actualizarPaseGoogle };
+// POST /api/wallet/callback  — Google Wallet nos avisa eventos (guardado, borrado, etc.)
+async function callbackWallet(req, res) {
+  try {
+    const { eventType, expTimeMillis, nonce, signedMessage } = req.body;
+    console.log('📲 Google Wallet callback:', eventType, '| exp:', expTimeMillis);
+    // Confirmar recepción a Google
+    res.status(200).json({ ok: true });
+  } catch (err) {
+    console.error('Error en callback Wallet:', err);
+    res.status(200).json({ ok: true }); // Siempre 200 para que Google no reintente
+  }
+}
+
+// GET /api/wallet/actualizar-oferta/:objectId — Google pide el estado actualizado del cupón
+async function actualizarOferta(req, res) {
+  try {
+    const { objectId } = req.params;
+    console.log('🔄 Google solicita actualización de oferta:', objectId);
+    // Responder con el objeto actualizado (por ahora confirma que está activo)
+    res.status(200).json({
+      id: objectId,
+      state: 'ACTIVE',
+    });
+  } catch (err) {
+    console.error('Error actualizando oferta:', err);
+    res.status(500).json({ error: 'Error al actualizar oferta' });
+  }
+}
+
+module.exports = { crearPaseGoogle, actualizarPaseGoogle, callbackWallet, actualizarOferta };
