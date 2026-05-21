@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
+  <rect width="200" height="200" rx="40" fill="#0071CE"/>
+  <!-- Cruz médica -->
+  <path d="M88 56 L112 56 L112 88 L144 88 L144 112 L112 112 L112 144 L88 144 L88 112 L56 112 L56 88 L88 88 Z" fill="white"/>
+</svg>
