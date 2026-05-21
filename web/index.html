@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Veris Loyalty – Tu tarjeta de fidelización</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0A0A0A;
+      --surface: #141414;
+      --surface2: #1E1E1E;
+      --gold: #F5C518;
+      --gold-dim: #C9A014;
+      --text: #FFFFFF;
+      --text-muted: #888888;
+      --error: #FF4D4D;
+      --success: #4DFF91;
+      --radius: 16px;
+    }
+
+    html, body {
+      min-height: 100vh;
+      background: var(--bg);
+      font-family: 'Space Grotesk', sans-serif;
+      color: var(--text);
+    }
+
+    .page {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 16px 80px;
+    }
+
+    /* ── Brand ─────────────────────────────────── */
+    .brand {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 48px;
+      gap: 12px;
+    }
+    .brand-logo {
+      width: 64px; height: 64px;
+      background: var(--gold);
+      border-radius: 18px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 28px; font-weight: 700; color: var(--bg);
+    }
+    .brand-name { font-size: 28px; font-weight: 700; letter-spacing: -0.5px; }
+    .brand-name span { color: var(--gold); }
+    .brand-tagline { font-size: 14px; color: var(--text-muted); }
+
+    /* ── Wallet card preview ─────────────────── */
+    .wallet-preview {
+      width: 100%; max-width: 380px;
+      background: linear-gradient(135deg, #1A1A1A 0%, #111111 100%);
+      border: 1px solid #2A2A2A;
+      border-radius: 20px;
+      padding: 24px;
+      margin-bottom: 40px;
+      position: relative;
+      overflow: hidden;
+    }
+    .wallet-preview::before {
+      content: '';
+      position: absolute; top: -60px; right: -60px;
+      width: 180px; height: 180px;
+      background: radial-gradient(circle, rgba(245,197,24,0.12) 0%, transparent 70%);
+      border-radius: 50%;
+    }
+    .wallet-preview-top {
+      display: flex; justify-content: space-between; align-items: flex-start;
+      margin-bottom: 28px;
+    }
+    .wallet-issuer { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+    .wallet-program { font-size: 20px; font-weight: 700; color: var(--gold); margin-top: 4px; }
+    .wallet-badge {
+      background: rgba(245,197,24,0.15); border: 1px solid rgba(245,197,24,0.3);
+      border-radius: 8px; padding: 6px 12px;
+      font-size: 11px; color: var(--gold); font-weight: 600; letter-spacing: 0.5px;
+    }
+    .wallet-info { display: flex; gap: 32px; margin-bottom: 20px; }
+    .wallet-info-item label {
+      font-size: 10px; color: var(--text-muted); text-transform: uppercase;
+      letter-spacing: 0.5px; display: block; margin-bottom: 4px;
+    }
+    .wallet-info-item span { font-size: 22px; font-weight: 700; color: var(--text); }
+    .wallet-name { font-size: 14px; color: var(--text-muted); font-weight: 500; }
+
+    /* ── Card / Forms ────────────────────────── */
+    .card {
+      width: 100%; max-width: 420px;
+      background: var(--surface);
+      border: 1px solid #222;
+      border-radius: var(--radius);
+      padding: 32px 28px;
+    }
+
+    .tabs {
+      display: flex; background: var(--surface2);
+      border-radius: 10px; padding: 4px; margin-bottom: 28px;
+    }
+    .tab-btn {
+      flex: 1; padding: 10px; border: none; background: transparent;
+      color: var(--text-muted); font-family: 'Space Grotesk', sans-serif;
+      font-size: 14px; font-weight: 500; border-radius: 8px; cursor: pointer;
+      transition: all 0.2s;
+    }
+    .tab-btn.active { background: var(--gold); color: var(--bg); font-weight: 600; }
+
+    .form-group { margin-bottom: 16px; }
+    .form-group label {
+      display: block; font-size: 13px; font-weight: 500;
+      color: var(--text-muted); margin-bottom: 8px; letter-spacing: 0.3px;
+    }
+    .form-group input {
+      width: 100%; padding: 14px 16px;
+      background: var(--surface2); border: 1px solid #2A2A2A;
+      border-radius: 10px; color: var(--text);
+      font-family: 'Space Grotesk', sans-serif; font-size: 15px;
+      outline: none; transition: border-color 0.2s;
+    }
+    .form-group input:focus { border-color: var(--gold); }
+    .form-group input::placeholder { color: #444; }
+
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    .btn-primary {
+      width: 100%; padding: 16px;
+      background: var(--gold); color: var(--bg);
+      border: none; border-radius: 12px;
+      font-family: 'Space Grotesk', sans-serif; font-size: 16px; font-weight: 700;
+      cursor: pointer; transition: background 0.2s, transform 0.1s; margin-top: 8px;
+    }
+    .btn-primary:hover { background: var(--gold-dim); }
+    .btn-primary:active { transform: scale(0.98); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* ── Google Wallet button ─────────────────── */
+    .wallet-section { width: 100%; max-width: 420px; margin-top: 24px; text-align: center; }
+    .btn-wallet {
+      display: inline-flex; align-items: center; gap: 12px;
+      padding: 14px 28px;
+      background: #000; border: 2px solid #444; border-radius: 40px;
+      color: #fff; font-family: 'Space Grotesk', sans-serif;
+      font-size: 15px; font-weight: 600; cursor: pointer; text-decoration: none;
+      transition: border-color 0.2s, transform 0.1s;
+    }
+    .btn-wallet:hover { border-color: var(--gold); transform: scale(1.02); }
+    .btn-wallet svg { flex-shrink: 0; }
+    .wallet-hint { margin-top: 12px; font-size: 12px; color: var(--text-muted); }
+
+    /* ── Messages ────────────────────────────── */
+    .msg {
+      padding: 12px 16px; border-radius: 10px;
+      font-size: 14px; margin-top: 12px; display: none;
+    }
+    .msg.error { background: rgba(255,77,77,0.1); border: 1px solid rgba(255,77,77,0.3); color: var(--error); display: block; }
+    .msg.success { background: rgba(77,255,145,0.1); border: 1px solid rgba(77,255,145,0.3); color: var(--success); display: block; }
+
+    /* ── Logged-in state ─────────────────────── */
+    .user-card {
+      width: 100%; max-width: 420px;
+      background: var(--surface); border: 1px solid #222;
+      border-radius: var(--radius); padding: 28px;
+    }
+    .user-greeting { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+    .user-code { font-size: 12px; color: var(--text-muted); font-family: monospace; margin-bottom: 24px; }
+    .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
+    .stat-box { background: var(--surface2); border-radius: 12px; padding: 16px; }
+    .stat-box label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px; }
+    .stat-box span { font-size: 26px; font-weight: 700; }
+    .nivel-badge { display: inline-block; padding: 4px 10px; border-radius: 6px; font-size: 13px; font-weight: 600; }
+    .nivel-BRONZE { background: rgba(205,127,50,0.2); color: #CD7F32; }
+    .nivel-SILVER { background: rgba(192,192,192,0.2); color: #C0C0C0; }
+    .nivel-GOLD   { background: rgba(245,197,24,0.2);  color: var(--gold); }
+    .btn-logout {
+      background: transparent; border: 1px solid #333;
+      color: var(--text-muted); padding: 10px 20px;
+      border-radius: 10px; font-family: 'Space Grotesk', sans-serif;
+      font-size: 13px; cursor: pointer; transition: border-color 0.2s;
+    }
+    .btn-logout:hover { border-color: var(--error); color: var(--error); }
+
+    .loader {
+      display: inline-block; width: 18px; height: 18px;
+      border: 2px solid transparent; border-top-color: var(--bg);
+      border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+<div class="page">
+  <!-- Brand -->
+  <div class="brand">
+    <div class="brand-logo">V</div>
+    <div class="brand-name">Veris <span>Loyalty</span></div>
+    <div class="brand-tagline">Tu tarjeta de fidelización digital</div>
+  </div>
+
+  <!-- Wallet card preview -->
+  <div class="wallet-preview">
+    <div class="wallet-preview-top">
+      <div>
+        <div class="wallet-issuer">Veris Loyalty</div>
+        <div class="wallet-program">Tarjeta Fidelización</div>
+      </div>
+      <div class="wallet-badge" id="preview-nivel">BRONCE</div>
+    </div>
+    <div class="wallet-info">
+      <div class="wallet-info-item">
+        <label>Puntos</label>
+        <span id="preview-puntos">0</span>
+      </div>
+      <div class="wallet-info-item">
+        <label>Nivel</label>
+        <span style="font-size:16px; color: var(--gold);" id="preview-nivel-text">Bronce</span>
+      </div>
+    </div>
+    <div class="wallet-name" id="preview-name">Tu nombre aquí</div>
+  </div>
+
+  <!-- ── Auth section (not logged in) ── -->
+  <div id="auth-section">
+    <div class="card">
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('login')">Iniciar sesión</button>
+        <button class="tab-btn" onclick="switchTab('registro')">Registrarse</button>
+      </div>
+
+      <!-- Login -->
+      <form id="login-form" onsubmit="handleLogin(event)">
+        <div class="form-group">
+          <label>Correo electrónico</label>
+          <input type="email" id="login-email" placeholder="tu@correo.com" required />
+        </div>
+        <div class="form-group">
+          <label>Contraseña</label>
+          <input type="password" id="login-contrasena" placeholder="••••••••" required />
+        </div>
+        <button type="submit" class="btn-primary" id="login-btn">Iniciar sesión</button>
+        <div class="msg" id="login-msg"></div>
+      </form>
+
+      <!-- Registro -->
+      <form id="registro-form" style="display:none;" onsubmit="handleRegistro(event)">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Nombre</label>
+            <input type="text" id="reg-nombre" placeholder="Juan" required />
+          </div>
+          <div class="form-group">
+            <label>Apellido</label>
+            <input type="text" id="reg-apellido" placeholder="Pérez" required />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Correo electrónico</label>
+          <input type="email" id="reg-email" placeholder="tu@correo.com" required />
+        </div>
+        <div class="form-group">
+          <label>Teléfono</label>
+          <input type="tel" id="reg-telefono" placeholder="+593 99 123 4567" required />
+        </div>
+        <div class="form-group">
+          <label>Contraseña</label>
+          <input type="password" id="reg-contrasena" placeholder="Mínimo 8 caracteres" minlength="8" required />
+        </div>
+        <button type="submit" class="btn-primary" id="reg-btn">Crear cuenta</button>
+        <div class="msg" id="reg-msg"></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ── Logged-in section ── -->
+  <div id="user-section" style="display:none; width:100%; max-width:420px;">
+    <div class="user-card">
+      <div class="user-greeting" id="user-greeting">¡Hola!</div>
+      <div class="user-code" id="user-code"></div>
+      <div class="stats-grid">
+        <div class="stat-box">
+          <label>Puntos</label>
+          <span id="user-puntos">–</span>
+        </div>
+        <div class="stat-box">
+          <label>Nivel</label>
+          <span id="user-nivel">–</span>
+        </div>
+      </div>
+      <button class="btn-logout" onclick="logout()">Cerrar sesión</button>
+    </div>
+
+    <div class="wallet-section">
+      <button class="btn-wallet" id="wallet-btn" onclick="agregarGoogleWallet()">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <path d="M21.5 12C21.5 17.2467 17.2467 21.5 12 21.5C6.75329 21.5 2.5 17.2467 2.5 12C2.5 6.75329 6.75329 2.5 12 2.5C17.2467 2.5 21.5 6.75329 21.5 12Z" fill="#4285F4"/>
+          <path d="M12 5L7 12H12V19L17 12H12V5Z" fill="white"/>
+        </svg>
+        Añadir a Google Wallet
+      </button>
+      <p class="wallet-hint">Tu tarjeta de puntos siempre a mano en tu teléfono</p>
+      <div class="msg" id="wallet-msg"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const API = 'https://veris-backend-3jar.onrender.com/api';
+  let accessToken = localStorage.getItem('veris_token') || null;
+
+  function switchTab(tab) {
+    document.getElementById('login-form').style.display = tab === 'login' ? '' : 'none';
+    document.getElementById('registro-form').style.display = tab === 'registro' ? '' : 'none';
+    document.querySelectorAll('.tab-btn').forEach((b, i) => {
+      b.classList.toggle('active', (i === 0 && tab === 'login') || (i === 1 && tab === 'registro'));
+    });
+  }
+
+  window.addEventListener('DOMContentLoaded', () => {
+    if (accessToken) loadProfile();
+  });
+
+  async function handleLogin(e) {
+    e.preventDefault();
+    const btn = document.getElementById('login-btn');
+    const msg = document.getElementById('login-msg');
+    msg.className = 'msg';
+    btn.disabled = true;
+    btn.innerHTML = '<span class="loader"></span>';
+
+    try {
+      const res = await fetch(`${API}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: document.getElementById('login-email').value,
+          contrasena: document.getElementById('login-contrasena').value,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error al iniciar sesión');
+      accessToken = data.access_token;
+      localStorage.setItem('veris_token', accessToken);
+      showUserSection(data.usuario, data.tarjeta);
+    } catch (err) {
+      msg.textContent = err.message;
+      msg.className = 'msg error';
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = 'Iniciar sesión';
+    }
+  }
+
+  async function handleRegistro(e) {
+    e.preventDefault();
+    const btn = document.getElementById('reg-btn');
+    const msg = document.getElementById('reg-msg');
+    msg.className = 'msg';
+    btn.disabled = true;
+    btn.innerHTML = '<span class="loader"></span>';
+
+    try {
+      const res = await fetch(`${API}/auth/registro`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nombre: document.getElementById('reg-nombre').value,
+          apellido: document.getElementById('reg-apellido').value,
+          email: document.getElementById('reg-email').value,
+          telefono: document.getElementById('reg-telefono').value,
+          contrasena: document.getElementById('reg-contrasena').value,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error al registrarse');
+      accessToken = data.access_token;
+      localStorage.setItem('veris_token', accessToken);
+      showUserSection(data.usuario, data.tarjeta);
+    } catch (err) {
+      msg.textContent = err.message;
+      msg.className = 'msg error';
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = 'Crear cuenta';
+    }
+  }
+
+  async function loadProfile() {
+    try {
+      const res = await fetch(`${API}/auth/perfil`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      if (!res.ok) { logout(); return; }
+      const data = await res.json();
+      // perfil returns { id, nombre, apellido, email, tarjeta }
+      showUserSection(data, data.tarjeta);
+    } catch {
+      logout();
+    }
+  }
+
+  function showUserSection(usuario, tarjeta) {
+    document.getElementById('auth-section').style.display = 'none';
+    document.getElementById('user-section').style.display = '';
+    document.getElementById('user-greeting').textContent = `¡Hola, ${usuario.nombre}!`;
+
+    if (tarjeta) {
+      const nivelMap = { BRONZE: 'Bronce', SILVER: 'Plata', GOLD: 'Oro' };
+      const nivelLabel = nivelMap[tarjeta.nivel] || tarjeta.nivel;
+
+      document.getElementById('user-code').textContent = `Código: ${tarjeta.codigo_unico}`;
+      document.getElementById('user-puntos').textContent = tarjeta.puntos_actuales ?? 0;
+      document.getElementById('user-nivel').innerHTML = `<span class="nivel-badge nivel-${tarjeta.nivel}">${nivelLabel}</span>`;
+
+      document.getElementById('preview-name').textContent = `${usuario.nombre} ${usuario.apellido || ''}`.trim();
+      document.getElementById('preview-puntos').textContent = tarjeta.puntos_actuales ?? 0;
+      document.getElementById('preview-nivel-text').textContent = nivelLabel;
+      document.getElementById('preview-nivel').textContent = nivelLabel.toUpperCase();
+    }
+  }
+
+  async function agregarGoogleWallet() {
+    const btn = document.getElementById('wallet-btn');
+    const msg = document.getElementById('wallet-msg');
+    msg.className = 'msg';
+    btn.disabled = true;
+    btn.innerHTML = '<span class="loader" style="border-top-color:#fff"></span> Generando pase…';
+
+    try {
+      const res = await fetch(`${API}/wallet/google/crear`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error generando pase');
+      window.open(data.url, '_blank');
+    } catch (err) {
+      msg.textContent = err.message;
+      msg.className = 'msg error';
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+        <path d="M21.5 12C21.5 17.2467 17.2467 21.5 12 21.5C6.75329 21.5 2.5 17.2467 2.5 12C2.5 6.75329 6.75329 2.5 12 2.5C17.2467 2.5 21.5 6.75329 21.5 12Z" fill="#4285F4"/>
+        <path d="M12 5L7 12H12V19L17 12H12V5Z" fill="white"/>
+      </svg> Añadir a Google Wallet`;
+    }
+  }
+
+  function logout() {
+    localStorage.removeItem('veris_token');
+    accessToken = null;
+    document.getElementById('auth-section').style.display = '';
+    document.getElementById('user-section').style.display = 'none';
+  }
+</script>
+</body>
+</html>

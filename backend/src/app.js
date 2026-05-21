@@ -9,6 +9,7 @@ const qrRoutes = require('./routes/qr');
 const couponRoutes = require('./routes/coupons');
 const transactionRoutes = require('./routes/transactions');
 const adminRoutes = require('./routes/admin');
+const walletRoutes = require('./routes/wallet');
 const { globalRateLimiter } = require('./middleware/rateLimit');
 
 const app = express();
@@ -35,6 +36,7 @@ app.use('/api/qr', qrRoutes);
 app.use('/api/coupons', couponRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/wallet', walletRoutes);
 
 // ─── Health check ────────────────────────────
 app.get('/health', (req, res) => {

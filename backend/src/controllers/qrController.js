@@ -203,4 +203,96 @@ async function infoClienteQR(req, res) {
   }
 }
 
-module.exports = { generarQR, escanearQR, infoClienteQR };
+// ─────────────────────────────────────────────
+// BUSCAR CLIENTE POR CÓDIGO ÚNICO (admin lookup manual)
+// ─────────────────────────────────────────────
+async function buscarClientePorCodigo(req, res) {
+  try {
+    const { codigo } = req.params;
+
+    const tarjeta = await prisma.loyaltyCard.findUnique({
+      where: { codigo_unico: codigo },
+      include: { usuario: { select: { nombre: true, apellido: true, email: true } } },
+    });
+
+    if (!tarjeta) {
+      return res.status(404).json({ error: 'Cliente no encontrado' });
+    }
+
+    return res.json({
+      nombre: tarjeta.usuario.nombre,
+      apellido: tarjeta.usuario.apellido,
+      tarjeta: {
+        id: tarjeta.id,
+        codigo_unico: tarjeta.codigo_unico,
+        puntos_actuales: tarjeta.puntos_actuales,
+        puntos_totales: tarjeta.puntos_totales,
+        nivel: tarjeta.nivel,
+      },
+    });
+  } catch (error) {
+    console.error('Error buscando cliente:', error);
+    return res.status(500).json({ error: 'Error interno' });
+  }
+}
+
+// ─────────────────────────────────────────────
+// SUMAR PUNTOS MANUAL (sin QR, admin lookup directo)
+// ─────────────────────────────────────────────
+async function sumarPuntosManual(req, res) {
+  try {
+    const { tarjetaId, puntos } = req.body;
+    const businessId = req.admin.business_id;
+
+    if (!tarjetaId || !puntos || puntos <= 0) {
+      return res.status(400).json({ error: 'tarjetaId y puntos son obligatorios' });
+    }
+
+    const puntosNum = parseInt(puntos);
+
+    const [transaccion, tarjetaActualizada] = await prisma.$transaction(async (tx) => {
+      const tarjeta = await tx.loyaltyCard.findUnique({ where: { id: tarjetaId } });
+      if (!tarjeta) throw new Error('Tarjeta no encontrada');
+
+      const nuevosPuntosActuales = tarjeta.puntos_actuales + puntosNum;
+      const nuevosPuntosTotales = tarjeta.puntos_totales + puntosNum;
+
+      let nuevoNivel = 'BRONZE';
+      if (nuevosPuntosTotales >= PUNTOS_ORO) nuevoNivel = 'GOLD';
+      else if (nuevosPuntosTotales >= PUNTOS_PLATA) nuevoNivel = 'SILVER';
+
+      const tarjetaActual = await tx.loyaltyCard.update({
+        where: { id: tarjetaId },
+        data: {
+          puntos_actuales: nuevosPuntosActuales,
+          puntos_totales: nuevosPuntosTotales,
+          nivel: nuevoNivel,
+        },
+      });
+
+      const trans = await tx.transaction.create({
+        data: {
+          card_id: tarjetaId,
+          business_id: businessId,
+          tipo: 'GANANCIA',
+          puntos: puntosNum,
+          descripcion: 'Puntos agregados manualmente',
+        },
+      });
+
+      return [trans, tarjetaActual];
+    });
+
+    return res.json({
+      ok: true,
+      puntos_actuales: tarjetaActualizada.puntos_actuales,
+      nivel: tarjetaActualizada.nivel,
+      transaccion_id: transaccion.id,
+    });
+  } catch (error) {
+    console.error('Error al sumar puntos manual:', error);
+    return res.status(500).json({ error: 'Error al sumar puntos' });
+  }
+}
+
+module.exports = { generarQR, escanearQR, infoClienteQR, buscarClientePorCodigo, sumarPuntosManual };
