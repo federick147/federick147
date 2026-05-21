@@ -4,13 +4,20 @@ const jwt = require('jsonwebtoken');
 const ISSUER_ID = process.env.GOOGLE_WALLET_ISSUER_ID;
 const CLASS_ID = `${ISSUER_ID}.veris_loyalty`;
 
-// Autenticación con la cuenta de servicio
+// Lee las credenciales desde el JSON completo o variables individuales
+function getCredentials() {
+  if (process.env.GOOGLE_SERVICE_ACCOUNT_JSON) {
+    return JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON);
+  }
+  return {
+    client_email: process.env.GOOGLE_CLIENT_EMAIL,
+    private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+  };
+}
+
 function getAuth() {
   return new GoogleAuth({
-    credentials: {
-      client_email: process.env.GOOGLE_CLIENT_EMAIL,
-      private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-    },
+    credentials: getCredentials(),
     scopes: ['https://www.googleapis.com/auth/wallet_object.issuer'],
   });
 }
@@ -166,8 +173,8 @@ async function generarURLWallet(usuario, tarjeta) {
     },
   };
 
-  const privateKey = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n');
-  const token = jwt.sign(claims, privateKey, { algorithm: 'RS256' });
+  const creds = getCredentials();
+  const token = jwt.sign(claims, creds.private_key, { algorithm: 'RS256' });
 
   return `https://pay.google.com/gp/v/save/${token}`;
 }
