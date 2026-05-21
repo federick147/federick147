@@ -32,13 +32,13 @@ async function crearClaseLoyalty() {
     issuerName: 'Veris Loyalty',
     programName: 'Veris Loyalty',
     programLogo: {
-      sourceUri: { uri: 'https://veris.com.ec/logo.png' },
+      sourceUri: { uri: 'https://federick147.github.io/federick147/logo.svg' },
       contentDescription: { defaultValue: { language: 'es', value: 'Veris Logo' } },
     },
-    hexBackgroundColor: '#0A0A0A',
+    hexBackgroundColor: '#0071CE',
     heroImage: {
-      sourceUri: { uri: 'https://veris.com.ec/hero.png' },
-      contentDescription: { defaultValue: { language: 'es', value: 'Veris' } },
+      sourceUri: { uri: 'https://federick147.github.io/federick147/hero.svg' },
+      contentDescription: { defaultValue: { language: 'es', value: 'Veris Centrales Médicas' } },
     },
     rewardsTier: 'Bronce',
     rewardsTierLabel: 'Nivel',
@@ -107,7 +107,7 @@ async function crearObjetoLoyalty(usuario, tarjeta) {
         body: nivelLabel[tarjeta.nivel] || 'Bronce',
       },
     ],
-    hexBackgroundColor: '#0A0A0A',
+    hexBackgroundColor: '#0071CE',
   };
 
   try {
@@ -163,8 +163,10 @@ async function generarURLWallet(usuario, tarjeta) {
 
   const objectId = `${ISSUER_ID}.${tarjeta.id}`;
 
+  const creds = getCredentials();
+
   const claims = {
-    iss: process.env.GOOGLE_CLIENT_EMAIL,
+    iss: creds.client_email,
     aud: 'google',
     origins: ['*'],
     typ: 'savetowallet',
@@ -173,8 +175,8 @@ async function generarURLWallet(usuario, tarjeta) {
     },
   };
 
-  const creds = getCredentials();
-  const token = jwt.sign(claims, creds.private_key, { algorithm: 'RS256' });
+  const privateKey = creds.private_key.replace(/\\n/g, '\n');
+  const token = jwt.sign(claims, privateKey, { algorithm: 'RS256' });
 
   return `https://pay.google.com/gp/v/save/${token}`;
 }
